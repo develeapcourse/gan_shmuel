@@ -1,0 +1,72 @@
+[
+  {
+    "direction": "in",
+    "truck": "12-345-67",
+    "containers": [309, 320, 333], 
+    "weight": 11500,
+    "unit": "kg",
+    "force": false,
+    "produce": "mandarine"
+  },
+
+  {
+    "direction": "out",
+    "truck": "12-345-67",
+    "containers": [], 
+    "weight": 4000,
+    "unit": "kg",
+    "force": false,
+    "produce": "na"
+  },
+
+  {
+    "direction": "in",
+    "truck": "12-111-12",
+    "containers": ["A111"], 
+    "weight": 11111,
+    "unit": "kg",
+    "force": false,
+    "produce": "orange"
+  },
+
+  {
+    "direction": "none",
+    "truck": "na",
+    "containers": ["9669"], 
+    "weight": 1200,
+    "unit": "kg",
+    "force": false,
+    "produce": "na"
+  },
+
+  {
+    "direction": "in",
+    "truck": "42-431-44",
+    "containers": ["W420"], 
+    "weight": 14000,
+    "unit": "kg",
+    "force": false,
+    "produce": "mandarine"
+  },
+
+  {
+    "direction": "in",
+    "truck": "52-425-22",
+    "containers": ["CA4455"], 
+    "weight": 10200,
+    "unit": "kg",
+    "force": false,
+    "produce": "mango"
+  },
+
+  {
+    "direction": "out",
+    "truck": "42-431-44",
+    "containers": [], 
+    "weight": 5200,
+    "unit": "kg",
+    "force": false,
+    "produce": "na"
+  },
+
+]
