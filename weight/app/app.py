@@ -19,7 +19,7 @@ Weight Application
 """
 
 
-def init_config() -> List[Dict]
+def init_config() -> List[Dict]:
     """
     configures and initializes MySQL database.
     """
@@ -109,4 +109,4 @@ def health(jsonData):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=3306)
+    app.run(host='0.0.0.0', debug=True, port=5000)
