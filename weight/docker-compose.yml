@@ -1,7 +1,7 @@
 version: "3"
 services:
   app:
-    build: ./App
+    build: ./app
     depends_on:
       - db
     ports:
@@ -14,4 +14,4 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
     volumes:
-      - ./DB:/docker-entrypoint-initdb.d/:ro
+      - ./db:/docker-entrypoint-initdb.d/:ro

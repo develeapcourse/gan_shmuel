@@ -16,7 +16,7 @@ def init_config() -> List[Dict]
 	}
 	conn = mysql.connector.connect(**config)
 	cur = conn.cur()
-	cur.execute('SELECT * From truck')
+	cur.execute('SELECT * From weighings')
 	print(cur)
 	cur.close()
 	conn.close()
@@ -28,4 +28,4 @@ def init_config() -> List[Dict]
 	return json.dumps({'weight_system': init_config()})
 
 if __name__ == '__main__':
-	app.run(host='0.0.0.0',debug=True,port=3306
+	app.run(host='0.0.0.0',debug=True,port=3306)
