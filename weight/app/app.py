@@ -19,7 +19,12 @@ Weight Application
   Reminder: Bruto = Neto (fruit) + Tara (truck) + sum(Tara(Containers))
 """
 
+<<<<<<< HEAD
 def init_config() -> List[Dict]
+=======
+
+def init_config() -> List[Dict]:
+>>>>>>> 27d6c89c195875e2a7ec822e0ed57b81dfadba30
     """
     configures and initializes MySQL database.
     """
@@ -118,4 +123,4 @@ def health(jsonData):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=3306)
+    app.run(host='0.0.0.0', debug=True, port=5000)
