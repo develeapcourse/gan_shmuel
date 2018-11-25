@@ -1,0 +1,23 @@
+version: "3"
+
+services:
+    bills:
+        image: app 
+        volumes:
+            - bill_rates:/in
+
+    service_app_weight:
+        image: service_app_weight
+        volumes:
+            - weights:/in
+
+    service_db_weight:
+        image: service_db_weight
+        
+#    ui:
+#        service: UI
+#        volumes:
+#            - weights
+#            - bill_rates
+#        ports:
+#            - 80:80
