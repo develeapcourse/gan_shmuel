@@ -6,6 +6,8 @@ import json
 app = Flask(__name__)
 
 
+
+
 def favorite_colors() -> List[Dict]:
     config = {
         'user': 'root',
@@ -29,6 +31,12 @@ def favorite_colors() -> List[Dict]:
 def index() -> str:
     print("HI EVERY BODY")
     return json.dumps({'FlaskApp': favorite_colors()})
+
+
+@app.route('/health')
+def index() -> str:
+    return "ok"
+
 
 
 if __name__ == '__main__':
