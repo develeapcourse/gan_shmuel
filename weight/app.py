@@ -66,6 +66,17 @@ def get_session_id(jsonData):
     """
     pass
 
+@app.route('/health', methods = ['GET'])
+def health(jsonData):
+    """
+    health function...
+    """
+    # test acess to database
+    # test read from /in directory
+    # other tests...
+    return "ok"
+    pass
+
 
 if __name__ == '__main__':
     logging.info('Starting Weight System microservice flask server...')
