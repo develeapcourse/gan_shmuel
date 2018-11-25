@@ -1,0 +1,12 @@
+#!/bin/bash
+
+image_name = $1
+
+docker-compose --build --force-rm .
+if $1; then:
+    docker-compose start --name=$image_name
+else
+    docker-compose start
+fi
+
+python sanity.py
