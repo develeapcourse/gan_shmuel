@@ -20,14 +20,14 @@ else:
 """
 
 ================
-def insert_weight(sessionId, date, trackId, weight, units, containerId, direction):
+def insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_id, produce ):
 
-	cnx = mysql.connector.connect(user='someUser', database='weights')
+	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	add_weight = ("INSERT INTO weights "
-               "(sessionId, date, trackId, weight, units, containerId, direction) "
-               "VALUES (%s, %s, %s, %s, %s, %s, %s)")
+	add_weight = ("INSERT INTO weighings "
+               "(session_id, date_time, weight, unit, direction, truck_id, container_id, produce) "
+               "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
 
 	# Insert new weight
 	cursor.execute(add_weight, data_weight)
@@ -39,19 +39,19 @@ def insert_weight(sessionId, date, trackId, weight, units, containerId, directio
 	cursor.close()
 	cnx.close()
 
-        bot_logger.logger.info("Save weight for session=%s, date=%s, track=%s, weight=%s, units=%s container/s=%s, direction=%s" % (sessionId, date, trackId, weight, units, containerId, direction))
+        bot_logger.logger.info("Save weight for session=%s, date=%s, weight=%s, unit=%s, direction=%s, truck=%s,  container/s=%s, produce=%s" % (session_id, date_time, weight, unit, direction,  truck_id, container_id, produce))
 ================
 
 
 ================
-def insert_tara_container(containerId, weight, units, date):
+def insert_tara_container(container_id, container_weight, unit):
 
-	cnx = mysql.connector.connect(user='someUser', database='containers')
+	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	add_tara_container = ("INSERT INTO containers "
-               "(containerId, weight, units, date) "
-               "VALUES (%s, %s, %s, %s)")
+	add_tara_container = ("INSERT INTO tara_containers "
+               "(container_id, container_weight, unit) "
+               "VALUES (%s, %s, %s)")
 
 	# Insert new weight
 	cursor.execute(add_tara_container, data_container)
@@ -68,18 +68,18 @@ def insert_tara_container(containerId, weight, units, date):
 
 
 ================
-def insert_tara_track(trackId, weight, units, date):
+def insert_tara_truck(truck_id, truck_weight, unit):
 
-	cnx = mysql.connector.connect(user='someUser', database='tracks')
+	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	add_tara_track = ("INSERT INTO tracks "
-               "(trackId, weight, units, date) "
-               "VALUES (%s, %s, %s, %s)")
+	add_tara_track = ("INSERT INTO tara_trucks "
+               "(truck_id, truck_weight, unit) "
+               "VALUES (%s, %s, %s)")
 
 	# Insert new weight
-	cursor.execute(add_tara_track, data_track)
-	# *if needed? or already initilaized*  track_no = cursor.lastrowid
+	cursor.execute(add_tara_truck, data_truck)
+	# *if needed? or already initilaized*  truck_no = cursor.lastrowid
 
 	# Make sure data is committed to the database
 	cnx.commit()
@@ -87,16 +87,16 @@ def insert_tara_track(trackId, weight, units, date):
 	cursor.close()
 	cnx.close()
 
-        bot_logger.logger.info("Save weight for trackId=%s, weight=%s, units=%s, date=%s" % (containerId, weight, units, date))
+        bot_logger.logger.info("Save weight for truck_id=%s, truck_weight=%s, unit=%s" % (truck_id, truck_weight, unit))
 ================
 
 
 ================
 def get_unknown_weight_containers():
-	cnx = mysql.connector.connect(user='someUser', database='containers')
+	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	query = ("SELECT containerId FROM containers "
+	query = ("SELECT container_id FROM tara_containers "
          	"WHERE weight==NULL")
 	cursor.execute(query)
 
@@ -114,13 +114,13 @@ def get_unknown_weight_containers():
 
 ================
 def get_session_by_time(fromTime, toTime, direction):
-	cnx = mysql.connector.connect(user='someUser', database='weights')
+	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	query = ("SELECT sessionId, direction, date, trackId, weight, units, containerId,  "
-                 "FROM containers "
+	query = ("SELECT session_id, date_time, weight, unit, direction, truck_id, container_id produce  "
+                 "FROM weighings "
          	 "WHERE direction==%s and "
-		 "date BETWEEN %s and %s ")
+		 "date_time BETWEEN %s and %s ")
 	cursor.execute(query, (direction, fromTime, toTime))
 
 	"""
@@ -145,13 +145,13 @@ def get_session_by_time(fromTime, toTime, direction):
 
 ================	
 def get_tara_container(containerId ,fromTime, toTime):
-	cnx = mysql.connector.connect(user='someUser', database='containers')
+	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	query = ("SELECT containerId, weight, units, date  "
-                 "FROM containers "
-         	 "WHERE containerId==%s and "
-		 "date BETWEEN %s and %s ")
+	query = ("SELECT container_id, container_weight, unit, date_time "
+                 "FROM tara_containers "
+         	 "WHERE container_id==%s and "
+		 "date_time BETWEEN %s and %s ")
 	cursor.execute(query, (containerId, fromTime, toTime))
 
 	"""
@@ -165,15 +165,15 @@ def get_tara_container(containerId ,fromTime, toTime):
 
 
 ================
-def get_tara_track(trackId ,fromTime, toTime):
-	cnx = mysql.connector.connect(user='someUser', database='tracks')
+def get_tara_truck(truck_id ,fromTime, toTime):
+	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	query = ("SELECT trackId, weight, units, date  "
-                 "FROM tracks "
-         	 "WHERE trackId==%s and "
-		 "date BETWEEN %s and %s ")
-	cursor.execute(query, (trackId, fromTime, toTime))
+	query = ("SELECT truck_id, weight, unit, date_time "
+                 "FROM weighings "
+         	 "WHERE truck_id==%s and "
+		 "date_time BETWEEN %s and %s ")
+	cursor.execute(query, (truck_id, fromTime, toTime))
 
 	"""
 	return as json with list of tracks or 404 if not found
@@ -187,12 +187,12 @@ def get_tara_track(trackId ,fromTime, toTime):
 
 ================
 def get_session_weight(sessionId):
-	cnx = mysql.connector.connect(user='someUser', database='weights')
+	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	query = ("SELECT sessionId, direction, date, trackId, weight, units, containerId,  "
-                 "FROM weights "
-         	 "WHERE sessionId==%s")
+	query = ("SELECT session_id, direction, date_time, truck_id, weight, unit, container_id,  "
+                 "FROM weighings "
+         	 "WHERE session_id==%s")
 	cursor.execute(query, sessionId)
 
 	"""

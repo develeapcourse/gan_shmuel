@@ -4,6 +4,7 @@ from flask import Flask, request, json, jsonify
 import logging
 import mysql.connector
 import uuid
+import csv
 
 app = Flask(__name__)
 
@@ -18,8 +19,17 @@ Weight Application
   Reminder: Bruto = Neto (fruit) + Tara (truck) + sum(Tara(Containers))
 """
 
-
+<<<<<<< HEAD
+<<<<<<< HEAD
 def init_config() -> List[Dict]
+=======
+
+def init_config() -> List[Dict]:
+>>>>>>> 27d6c89c195875e2a7ec822e0ed57b81dfadba30
+=======
+
+def init_config() -> List[Dict]:
+>>>>>>> 27d6c89c195875e2a7ec822e0ed57b81dfadba30
     """
     configures and initializes MySQL database.
     """
@@ -37,6 +47,15 @@ def init_config() -> List[Dict]
     cur.close()
     conn.close()
     return res
+"""
+CSV TO JSON PARSER
+"""
+data = []
+with open('file.csv') as f:
+    for row in csv.DictReader(f):
+        data.append(row)
+
+json_data = json.dumps(data)
 
 @app.route('/')
 def index() -> str:
@@ -109,4 +128,4 @@ def health(jsonData):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=3306)
+    app.run(host='0.0.0.0', debug=True, port=5000)
