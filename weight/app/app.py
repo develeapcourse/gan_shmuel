@@ -1,7 +1,10 @@
+# -*-coding:utf-8 -*
+from typing import List, Dict
+from flask import Flask, request, json, jsonify
 import logging
+import mysql.connector
 import uuid
 
-from flask import Flask, request, json
 app = Flask(__name__)
 
 
@@ -15,6 +18,33 @@ Weight Application
   Reminder: Bruto = Neto (fruit) + Tara (truck) + sum(Tara(Containers))
 """
 
+
+def init_config() -> List[Dict]
+    """
+    configures and initializes MySQL database.
+    """
+    config = {
+    'user' : 'root',
+    'password' : 'root',
+    'host' : 'db',
+    'port' : '3306',
+    'database' : 'weight_system'
+    }
+    conn = mysql.connector.connect(**config)
+    cur = conn.cur()
+    cur.execute('SELECT * From weighings')
+    print(cur)
+    cur.close()
+    conn.close()
+    return res
+
+@app.route('/')
+def index() -> str:
+    """
+    for debugging purposes: dumps all database.
+
+    """
+    return json.dumps({'weight_system': init_config()})
 
 @app.route('/weight', methods = ['POST'])
 def post_weight(jsonData):
@@ -66,7 +96,17 @@ def get_session_id(jsonData):
     """
     pass
 
+@app.route('/health', methods = ['GET'])
+def health(jsonData):
+    """
+    health function...
+    """
+    # test acess to database
+    # test read from /in directory
+    # other tests...
+    return "ok"
+    pass
+
 
 if __name__ == '__main__':
-    logging.info('Starting Weight System microservice flask server...')
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='0.0.0.0', debug=True, port=3306)
