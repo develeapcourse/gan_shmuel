@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+    bills:
+        extends:
+            file: bills/docker-compose.yml
+            service: bills
+    weight:
+        extends:
+            file: weight/docker-compose.yml
+            service: weight
