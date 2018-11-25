@@ -20,7 +20,12 @@ Weight Application
 """
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 def init_config() -> List[Dict]
+=======
+
+def init_config() -> List[Dict]:
+>>>>>>> 27d6c89c195875e2a7ec822e0ed57b81dfadba30
 =======
 
 def init_config() -> List[Dict]:
