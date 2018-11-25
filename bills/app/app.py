@@ -34,7 +34,7 @@ def index() -> str:
 
 
 @app.route('/health')
-def index() -> str:
+def health()-> str:
     return "ok"
 
 
