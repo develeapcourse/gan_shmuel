@@ -4,6 +4,7 @@ from flask import Flask, request, json, jsonify
 import logging
 import mysql.connector
 import uuid
+import csv
 
 app = Flask(__name__)
 
@@ -17,7 +18,6 @@ Weight Application
   The WeightApp tracks all weights and allows payment to be for net weight.
   Reminder: Bruto = Neto (fruit) + Tara (truck) + sum(Tara(Containers))
 """
-
 
 def init_config() -> List[Dict]
     """
@@ -37,6 +37,15 @@ def init_config() -> List[Dict]
     cur.close()
     conn.close()
     return res
+"""
+CSV TO JSON PARSER
+"""
+data = []
+with open('file.csv') as f:
+    for row in csv.DictReader(f):
+        data.append(row)
+
+json_data = json.dumps(data)
 
 @app.route('/')
 def index() -> str:
