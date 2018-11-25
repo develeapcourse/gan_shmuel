@@ -25,6 +25,7 @@ CREATE TABLE weighings (
 		direction VARCHAR(10) NOT NULL
 		truck_id VARCHAR(50) NOT NULL,
 		container_id VARCHAR(50) NOT NULL,
+		produce VARCHAR(50) NOT NULL,
 		PRIMARY KEY (id)
 );
 
