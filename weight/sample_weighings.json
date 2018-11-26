@@ -52,7 +52,7 @@
   {
     "direction": "in",
     "truck": "52-425-22",
-    "containers": ["CA4455"], 
+    "containers": ["CA4455"],
     "weight": 10200,
     "unit": "kg",
     "force": false,
@@ -67,6 +67,5 @@
     "unit": "kg",
     "force": false,
     "produce": "na"
-  },
-
+  }
 ]

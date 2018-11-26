@@ -1,10 +1,23 @@
 # -*-coding:utf-8 -*
 from typing import List, Dict
+from pathlib import Path  # python3 only
 from flask import Flask, request, json, jsonify
+import os
+import datetime
 import logging
 import mysql.connector
 import uuid
 import csv
+import code
+import pdb
+
+# Setting .env path and loading its values
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path, verbose=True, override=True)
+
+# Logging default level is WARNING (30), So switch to level DEBUG (10)
+logging.basicConfig(filename="test.log", level=logging.DEBUG, format="%(asctime)s:%(levelname)s:%(funcName)s:%(message)s")
+
 
 app = Flask(__name__)
 
@@ -19,113 +32,155 @@ Weight Application
   Reminder: Bruto = Neto (fruit) + Tara (truck) + sum(Tara(Containers))
 """
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-def init_config() -> List[Dict]
-=======
-
 def init_config() -> List[Dict]:
->>>>>>> 27d6c89c195875e2a7ec822e0ed57b81dfadba30
-=======
-
-def init_config() -> List[Dict]:
->>>>>>> 27d6c89c195875e2a7ec822e0ed57b81dfadba30
-    """
-    configures and initializes MySQL database.
-    """
+    # configures and initializes MySQL database.
+    
     config = {
-    'user' : 'root',
-    'password' : 'root',
-    'host' : 'db',
-    'port' : '3306',
-    'database' : 'weight_system'
+    'user' : os.getenv("USER"),
+    'password' : os.getenv("PASSWORD"),
+    'host' : os.getenv("HOST"),
+    'port' : os.getenv("PORT"),
+    'database' : os.getenv("DATABASE")
     }
     conn = mysql.connector.connect(**config)
     cur = conn.cur()
     cur.execute('SELECT * From weighings')
-    print(cur)
+    logging.debug(cur)
     cur.close()
     conn.close()
     return res
-"""
-CSV TO JSON PARSER
-"""
-data = []
-with open('file.csv') as f:
-    for row in csv.DictReader(f):
-        data.append(row)
 
-json_data = json.dumps(data)
+def csv_to_json(csvFile):
+    # CSV to JSON parser
+
+    data = []
+    with open(csvFile) as f:
+        for row in csv.DictReader(f):
+            data.append(row)
+    json_data = json.dumps(data)
+    return json_data
 
 @app.route('/')
 def index() -> str:
-    """
-    for debugging purposes: dumps all database.
-
-    """
+    # for debugging purposes: dumps all database.
+ 
     return json.dumps({'weight_system': init_config()})
 
 @app.route('/weight', methods = ['POST'])
 def post_weight(jsonData):
+    # Records data and server date-time and returns a json object with a unique weight.
     """
-    Records data and server date-time and returns a json object with a unique weight.
-    Note that "in" & "none" will generate a new session id, and "out" will return session id of previous "in" for the truck.
+    for debugging purposes: dumps all database.
     """
-    data = request.get_json()  # testing
-    print('printing YAY!!')  # testing
-    print(data)  # testing
-    return "returning YAY!!" + data  # testing
+    return json.dumps({'weight_system': init_config()})
 
-@app.route('/batch-weight', methods = ['POST'])
-def post_batch_weight(jsonData):
+@app.route('/weight?direction=<str:direction>&truck=<str:truck_id>&containers=<arr:container_ids>&weight=<int:weight>&unit=<str:unit>&force=<bool:force>&produce=<str:produce>', methods = ['POST'])
+def post_weight(direction, truck_id, container_ids, weight, unit, force, produce):
+>>>>>>> e8fa704fbfdaa583621ef08461ddaecf61e715e3
+    """
+    Note that "in" & "none" will generate a new session id, and "out" will return session id of previous "in" for the truck.
+    Return json on success:
+    {
+      "id": <str>,
+      "truck": <license> or "na",
+      "bruto": <int>,
+      //ONLY for OUT:
+      "truckTara": <int>,
+      "neto": <int> or "na" // na if some of containers have unknown tara
+    }
+    """
+    
+    # return json on success
+    pass  # temporary line, until function and return implemented
+
+@app.route('/batch-weight?file=<str:filename>', methods = ['POST'])
+def post_batch_weight(filename):
     """
     Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
-    File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
     """
+    # File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
+    
     pass
 
+    with open('/in/{}'.format(filename), 'r') as f:
+        lines = f.readlines()
+    # do something with array `lines`
+    
+    # return something
+    pass  # temporary line, until function and return implemented
+
 @app.route('/unknown', methods = ['GET'])
-def get_unknown_containers(jsonData):
+def get_unknown_containers():
     """
     Returns a list of all recorded containers that have unknown weight:
     ["id1","id2",...]
     """
-    pass
+    
+    # return array of strings
+    pass  # temporary line, until function and return implemented
 
-@app.route('/weight', methods = ['GET'])  # /weight?from=t1&to=t2&filter=f
-def get_weight_from_file(jsonData):
+@app.route('/weight?from=<str:t1>&to=<str:t2>&filter=<str:filter>', methods = ['GET'])  # /weight?from=t1&to=t2&filter=f
+def get_weight_from_file(t1, t2, directions = ['in', 'out', 'none']):
     """
-    Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
-    File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
+    - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
+    - directions - comma delimited list of directions. default is "in,out,none"
+    default t1 is "today at 000000". default t2 is "now".
+    returns an array of json objects, one per weighing (batch NOT included)
     """
-    pass
+    
+    # return array of json objects
+    pass  # temporary line, until function and return implemented
 
-@app.route('/item', methods = ['GET'])  # /item/<id>?from=t1&to=t2
-def get_item(jsonData):
+@app.route('/item/<str:id>?from=<str:t1>&to=<str:t2>', methods = ['GET'])  # /item/<id>?from=t1&to=t2
+def get_item(item_id, t1, t2):
     """
     - id is for an item (truck or container). 404 will be returned if non-existent
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
     default t1 is "1st of month at 000000". default t2 is "now".
+    Returns a json:
+    {
+      "id": <str>,
+      "tara": <int> OR "na", // for a truck this is the "last known tara"
+      "sessions": [ <id1>,...]
+    }
     """
+    
+    # return json
+    pass  # temporary line, until function and return implemented
 
-@app.route('/session', methods = ['GET'])  # /session/<id>
-def get_session_id(jsonData):
+@app.route('/session/<str:id>', methods = ['GET'])  # /session/<id>
+def get_session(session_id):
     """
-    id is for a weighing session. 404 will be returned if non-existent.
+    session_id is for a weighing session. 404 will be returned if non-existent.
+    Returns a json:
+    {
+      "id": <str>,
+      "truck": <truck-id> or "na",
+      "bruto": <int>,
+      //ONLY for OUT:
+      "truckTara": <int>,
+      "neto": <int> or "na" // na if some of containers unknown
+    }
     """
-    pass
+    
+    # return json
+    pass  # temporary line, until function and return implemented
 
 @app.route('/health', methods = ['GET'])
-def health(jsonData):
+def health():
     """
     health function...
     """
-    # test acess to database
     # test read from /in directory
+    # test acess to database
     # other tests...
     return "ok"
-    pass
+    pass  # temporary line, until function and return implemented
 
 
 if __name__ == '__main__':
+    # Use interact() function to start the Interpreter with local namespace
+    code.interact(banner="Start", local=locals(), exitmsg="End")
+    # Trigger Python Debugging Program
+    pdb.set_trace()
     app.run(host='0.0.0.0', debug=True, port=5000)
