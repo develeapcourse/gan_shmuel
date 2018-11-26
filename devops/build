@@ -10,8 +10,6 @@ for f in $(find ../ -name 'docker-compose.*'); do
     sed -i -E 's/(image:.*)/\1:$image_tag/' $f
 done
 
-docker-compose up -f ../bills/docker-compose.yml -f ../weight/docker-compose.yml -f ./docker-compose.override.yml
-
-docker-compose up
+docker-compose -f ../bills/docker-compose.yml -f ../weight/docker-compose.yml -f ./docker-compose.override.yml up -d
 
 ./sanity.py
