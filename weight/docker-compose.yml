@@ -6,15 +6,13 @@ services:
     depends_on:
       - service_db_weight
     ports:
-      - "5000:5000"
+      - 5000
     volumes:
-      - ./app:/app
-      - ./in:/in
+      - /app
+      - /in
 
   service_db_weight:
-    image: mysql:5.7:weight_db_service
-    ports:
-      - "32000:3306"
+    image: mysql:5.7
     environment:
       MYSQL_ROOT_PASSWORD: root
     volumes:

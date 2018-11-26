@@ -7,7 +7,7 @@ Weight Application
 """
 
 # -*-coding:utf-8 -*
-#from dotenv import load_dotenv
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 import mySQL_DAL
 from pathlib import Path
@@ -21,8 +21,8 @@ import uuid
 
 
 # Setting .env path and loading its values
-#env_path = Path('.') / '.env'
-#load_dotenv(dotenv_path=env_path, verbose=True, override=True)
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path, verbose=True, override=True)
 
 # Logging default level is WARNING (30), So switch to level DEBUG (10)
 logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
@@ -170,10 +170,16 @@ def health():
     """
     health function...
     """
+    try:
+        connection = mysql.connector.connect(**init_config)
+        connection.close()
+    try:
     # test read from /in directory
-    # test acess to database
+
     # other tests...
-    return "ok"
+        return "ok"
+    except Exception as e: 
+        return(e)
     pass  # temporary line, until function and return implemented
 
 
