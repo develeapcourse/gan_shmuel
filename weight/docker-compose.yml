@@ -8,8 +8,8 @@ services:
     ports:
       - "6000:5000"
     volumes:
-      - ./app:/app
-      - ./in:/in
+      - /app
+      - /in
 
   service_db_weight:
     image: mysql:5.7:weight_db_service
