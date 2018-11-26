@@ -9,14 +9,14 @@ CREATE TABLE rates (
 
 
 CREATE TABLE provider (
-                providerId INT NOT NULL,
+                providerId INT NOT NULL AUTO_INCREMENT,
                 providerName VARCHAR(400) NOT NULL,
                 PRIMARY KEY (providerId)
 );
 INSERT into provider VALUES (1,"Provider 1");
 
 CREATE TABLE truck (
-                truckId INT NOT NULL,
+                truckId INT NOT NULL AUTO_INCREMENT,
                 providerId INT NOT NULL,
                 PRIMARY KEY (truckId)
 );

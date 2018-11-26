@@ -1,15 +1,3 @@
-# -*-coding:utf-8 -*
-from typing import List, Dict
-from flask import Flask, request, json, jsonify
-import logging
-import mysql.connector
-import uuid
-
-app = Flask(__name__)
-
-
-# Team: Michael, Raphael, Moria
-
 """
 Weight Application
 ------------------
@@ -18,95 +6,193 @@ Weight Application
   Reminder: Bruto = Neto (fruit) + Tara (truck) + sum(Tara(Containers))
 """
 
+# -*-coding:utf-8 -*
+from dotenv import load_dotenv
+from flask import Flask, request, jsonify
+import mySQL_DAL
+from pathlib import Path
+from typing import List, Dict
+import csv
+import datetime
+import logging
+import mysql.connector
+import os
+import uuid
 
-def init_config() -> List[Dict]
-    """
-    configures and initializes MySQL database.
-    """
+
+# Setting .env path and loading its values
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path, verbose=True, override=True)
+
+# Logging default level is WARNING (30), So switch to level DEBUG (10)
+logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+
+app = Flask(__name__)
+
+def init_config() -> List[Dict]:
+    # configures and initializes MySQL database.
     config = {
-    'user' : 'root',
-    'password' : 'root',
-    'host' : 'db',
-    'port' : '3306',
-    'database' : 'weight_system'
+    'user' : os.getenv('USER'),
+    'password' : os.getenv('PASSWORD'),
+    'host' : os.getenv('HOST'),
+    'port' : os.getenv('PORT'),
+    'database' : os.getenv('DATABASE')
     }
     conn = mysql.connector.connect(**config)
     cur = conn.cur()
     cur.execute('SELECT * From weighings')
-    print(cur)
+    logging.debug(cur)
     cur.close()
     conn.close()
     return res
+
+def csv_to_json(csvFile):
+    """
+    takes an input CSV file and returns its JSON representation.
+    """
+    data = []
+    with open(csvFile) as f:
+        for row in csv.DictReader(f):
+            data.append(row)
+    json_data = json.dumps(data)
+    return json_data
 
 @app.route('/')
 def index() -> str:
     """
     for debugging purposes: dumps all database.
-
     """
     return json.dumps({'weight_system': init_config()})
 
 @app.route('/weight', methods = ['POST'])
-def post_weight(jsonData):
+def post_weight():
     """
-    Records data and server date-time and returns a json object with a unique weight.
     Note that "in" & "none" will generate a new session id, and "out" will return session id of previous "in" for the truck.
+    Return json on success:
+    {
+      "id": <str>,
+      "truck": <license> or "na",
+      "bruto": <int>,
+      //ONLY for OUT:
+      "truckTara": <int>,
+      "neto": <int> or "na" // na if some of containers have unknown tara
+    }
     """
-    data = request.get_json()  # testing
-    print('printing YAY!!')  # testing
-    print(data)  # testing
-    return "returning YAY!!" + data  # testing
+    direction = request.args.get('direction')
+    truck_id = request.args.get('truck')
+    container_ids = request.args.get('containers')
+    weight = request.args.get('weight')
+    unit = request.args.get('unit')
+    force = request.args.get('force')
+    produce = request.args.get('produce')
+    # post values to db
+    
+    # return json on success
+    pass  # temporary line, until function and return implemented
 
-@app.route('/batch-weight', methods = ['POST'])
-def post_batch_weight(jsonData):
+@app.route('/batch-weight?file=<string:filename>', methods = ['POST'])
+def post_batch_weight(filename):
     """
     Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
     File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
     """
-    pass
+    # do something with parameter `filename`
+    if filename.endswith('.csv'):
+        jsonData = csv_to_json(filename)
+    elif filename.endswith('.json'):
+        with open(filename, 'r') as f:
+            jsonData = f.readlines()
+    else:
+        return 'Error: illegal filetype.'
+
+    print(jsonData)
+
+    return 'ok'
 
 @app.route('/unknown', methods = ['GET'])
-def get_unknown_containers(jsonData):
+def get_unknown_containers():
     """
     Returns a list of all recorded containers that have unknown weight:
     ["id1","id2",...]
     """
-    pass
+    unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
+    return unknown_container_arr
 
-@app.route('/weight', methods = ['GET'])  # /weight?from=t1&to=t2&filter=f
-def get_weight_from_file(jsonData):
+@app.route('/weight?from=<string:t1>&to=<string:t2>&filter=<string:filter>', methods = ['GET'])  # /weight?from=t1&to=t2&filter=f
+def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
     """
-    Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
-    File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
+    - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
+    - directions - comma delimited list of directions. default is "in,out,none"
+    default t1 is "today at 000000". default t2 is "now".
+    returns an array of json objects, one per weighing (batch NOT included)
     """
-    pass
+    
+    # return array of json objects
+    pass  # temporary line, until function and return implemented
 
-@app.route('/item', methods = ['GET'])  # /item/<id>?from=t1&to=t2
-def get_item(jsonData):
+@app.route('/item/<string:id>?from=<string:t1>&to=<string:t2>', methods = ['GET'])  # /item/<id>?from=t1&to=t2
+def get_item(item_id, t1, t2):
     """
     - id is for an item (truck or container). 404 will be returned if non-existent
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
     default t1 is "1st of month at 000000". default t2 is "now".
+    Returns a json:
+    {
+      "id": <str>,
+      "tara": <int> OR "na", // for a truck this is the "last known tara"
+      "sessions": [ <id1>,...]
+    }
     """
+    return "petitpd"
+    # return json
+    pass  # temporary line, until function and return implemented
 
-@app.route('/session', methods = ['GET'])  # /session/<id>
-def get_session_id(jsonData):
+@app.route('/session/<string:session_id>', methods = ['GET'])  # /session/<id>
+def get_session(session_id):
     """
-    id is for a weighing session. 404 will be returned if non-existent.
+    session_id is for a weighing session. 404 will be returned if non-existent.
+    Returns a json:
+    {
+      "id": <str>,
+      "truck": <truck-id> or "na",
+      "bruto": <int>,
+      //ONLY for OUT:
+      "truckTara": <int>,
+      "neto": <int> or "na" // na if some of containers unknown
+    }
     """
-    pass
+    
+    try:
+        connection = mysql.connector.connect(**init_config)
+	cursor = connection.cursor()
+	
+        cursor.close()
+        connection.close()
+    
+    except Exception as e: 
+        return(e)
+    
+    # return json
+
 
 @app.route('/health', methods = ['GET'])
-def health(jsonData):
+def health():
     """
     health function...
     """
-    # test acess to database
+    try:
+        connection = mysql.connector.connect(**init_config)
+        connection.close()
+    try:
     # test read from /in directory
+
     # other tests...
-    return "ok"
-    pass
+        return "ok"
+    except Exception as e: 
+        return(e)
+    pass  # temporary line, until function and return implemented
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=3306)
+    logging.info('Starting Flask server...')
+    app.run(host='0.0.0.0', debug=True, port=5000)
