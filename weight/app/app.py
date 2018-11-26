@@ -7,35 +7,36 @@ Weight Application
 """
 
 # -*-coding:utf-8 -*
-from typing import List, Dict
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
+from mySQL_DAL import *
 from pathlib import Path
-import code
+from typing import List, Dict
 import csv
-import os
 import datetime
 import logging
 import mysql.connector
-import pdb
+import os
 import uuid
+
 
 # Setting .env path and loading its values
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path, verbose=True, override=True)
 
 # Logging default level is WARNING (30), So switch to level DEBUG (10)
-logging.basicConfig(filename="test.log", level=logging.DEBUG, format="%(asctime)s:%(levelname)s:%(funcName)s:%(message)s")
+logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
 app = Flask(__name__)
 
 def init_config() -> List[Dict]:
     # configures and initializes MySQL database.
     config = {
-    'user' : os.getenv("USER"),
-    'password' : os.getenv("PASSWORD"),
-    'host' : os.getenv("HOST"),
-    'port' : os.getenv("PORT"),
-    'database' : os.getenv("DATABASE")
+    'user' : os.getenv('USER'),
+    'password' : os.getenv('PASSWORD'),
+    'host' : os.getenv('HOST'),
+    'port' : os.getenv('PORT'),
+    'database' : os.getenv('DATABASE')
     }
     conn = mysql.connector.connect(**config)
     cur = conn.cur()
@@ -58,12 +59,6 @@ def csv_to_json(csvFile):
 
 @app.route('/')
 def index() -> str:
-    # for debugging purposes: dumps all database.
-    return json.dumps({'weight_system': init_config()})
-
-@app.route('/weight', methods = ['POST'])
-def post_weight(jsonData):
-    # Records data and server date-time and returns a json object with a unique weight.
     """
     for debugging purposes: dumps all database.
     """
@@ -95,7 +90,7 @@ def post_weight():
     # return json on success
     pass  # temporary line, until function and return implemented
 
-@app.route('/batch-weight?file=<str:filename>', methods = ['POST'])
+@app.route('/batch-weight?file=<string:filename>', methods = ['POST'])
 def post_batch_weight(filename):
     """
     Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
@@ -116,7 +111,7 @@ def get_unknown_containers():
     # return array of strings
     pass  # temporary line, until function and return implemented
 
-@app.route('/weight?from=<str:t1>&to=<str:t2>&filter=<str:filter>', methods = ['GET'])  # /weight?from=t1&to=t2&filter=f
+@app.route('/weight?from=<string:t1>&to=<string:t2>&filter=<string:filter>', methods = ['GET'])  # /weight?from=t1&to=t2&filter=f
 def get_weight_from_file(t1, t2, directions = ['in', 'out', 'none']):
     """
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
@@ -128,7 +123,7 @@ def get_weight_from_file(t1, t2, directions = ['in', 'out', 'none']):
     # return array of json objects
     pass  # temporary line, until function and return implemented
 
-@app.route('/item/<str:id>?from=<str:t1>&to=<str:t2>', methods = ['GET'])  # /item/<id>?from=t1&to=t2
+@app.route('/item/<string:id>?from=<string:t1>&to=<string:t2>', methods = ['GET'])  # /item/<id>?from=t1&to=t2
 def get_item(item_id, t1, t2):
     """
     - id is for an item (truck or container). 404 will be returned if non-existent
@@ -145,7 +140,7 @@ def get_item(item_id, t1, t2):
     # return json
     pass  # temporary line, until function and return implemented
 
-@app.route('/session/<str:id>', methods = ['GET'])  # /session/<id>
+@app.route('/session/<string:id>', methods = ['GET'])  # /session/<id>
 def get_session(session_id):
     """
     session_id is for a weighing session. 404 will be returned if non-existent.
@@ -176,8 +171,5 @@ def health():
 
 
 if __name__ == '__main__':
-    # Use interact() function to start the Interpreter with local namespace
-    code.interact(banner="Start", local=locals(), exitmsg="End")
-    # Trigger Python Debugging Program
-    pdb.set_trace()
+    logging.info('Starting Flask server...')
     app.run(host='0.0.0.0', debug=True, port=5000)
