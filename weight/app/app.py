@@ -140,7 +140,7 @@ def get_item(item_id, t1, t2):
     # return json
     pass  # temporary line, until function and return implemented
 
-@app.route('/session/<string:id>', methods = ['GET'])  # /session/<id>
+@app.route('/session/<string:session_id>', methods = ['GET'])  # /session/<id>
 def get_session(session_id):
     """
     session_id is for a weighing session. 404 will be returned if non-existent.
@@ -155,8 +155,18 @@ def get_session(session_id):
     }
     """
     
+    try:
+        connection = mysql.connector.connect(**init_config)
+	cursor = connection.cursor()
+	
+        cursor.close()
+        connection.close()
+    
+    except Exception as e: 
+        return(e)
+    
     # return json
-    pass  # temporary line, until function and return implemented
+
 
 @app.route('/health', methods = ['GET'])
 def health():
