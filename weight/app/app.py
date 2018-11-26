@@ -6,6 +6,15 @@ import logging
 import mysql.connector
 import uuid
 import csv
+import code
+import pdb
+
+"""
+Logging default level is WARNING (30), we want to debug when running,
+                  So switch to level DEBUG (10)
+"""
+logging.basicConfig(filename="test.log", level=logging.DEBUG, format="%(asctime)s:%(levelname)s:%(funcName)s:%(message)s")
+
 
 app = Flask(__name__)
 
@@ -34,7 +43,7 @@ def init_config() -> List[Dict]:
     conn = mysql.connector.connect(**config)
     cur = conn.cur()
     cur.execute('SELECT * From weighings')
-    print(cur)
+    logging.debug(cur)
     cur.close()
     conn.close()
     return res
@@ -72,9 +81,16 @@ def post_weight(direction, truck_id, container_ids, weight, unit, force, produce
       "neto": <int> or "na" // na if some of containers have unknown tara
     }
     """
+<<<<<<< HEAD
     
     # return json on success
     pass  # temporary line, until function and return implemented
+=======
+    data = request.get_json()  # testing
+    logging.debug('printing YAY!!')  # testing
+    logging.debug(data)  # testing
+    return "returning YAY!!" + data  # testing
+>>>>>>> origin/master
 
 @app.route('/batch-weight?file=<str:filename>', methods = ['POST'])
 def post_batch_weight(filename):
@@ -159,5 +175,12 @@ def health():
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     logger.info('Starting Flask server...')
+=======
+# Use interact() function to start the Interpreter with local namespace
+    code.interact(banner="Start", local=locals(), exitmsg="End")
+# Trigger Python Debugging Program
+    pdb.set_trace()
+>>>>>>> origin/master
     app.run(host='0.0.0.0', debug=True, port=5000)
