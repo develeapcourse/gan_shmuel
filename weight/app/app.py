@@ -1,29 +1,3 @@
-# -*-coding:utf-8 -*
-from typing import List, Dict
-from pathlib import Path  # python3 only
-from flask import Flask, request, json, jsonify
-import os
-import datetime
-import logging
-import mysql.connector
-import uuid
-import csv
-import code
-import pdb
-
-# Setting .env path and loading its values
-env_path = Path('.') / '.env'
-load_dotenv(dotenv_path=env_path, verbose=True, override=True)
-
-# Logging default level is WARNING (30), So switch to level DEBUG (10)
-logging.basicConfig(filename="test.log", level=logging.DEBUG, format="%(asctime)s:%(levelname)s:%(funcName)s:%(message)s")
-
-
-app = Flask(__name__)
-
-
-# Team: Michael, Raphael, Moria
-
 """
 Weight Application
 ------------------
@@ -32,9 +6,30 @@ Weight Application
   Reminder: Bruto = Neto (fruit) + Tara (truck) + sum(Tara(Containers))
 """
 
+# -*-coding:utf-8 -*
+from typing import List, Dict
+from flask import Flask, request, jsonify
+from pathlib import Path
+import code
+import csv
+import os
+import datetime
+import logging
+import mysql.connector
+import pdb
+import uuid
+
+# Setting .env path and loading its values
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path, verbose=True, override=True)
+
+# Logging default level is WARNING (30), So switch to level DEBUG (10)
+logging.basicConfig(filename="test.log", level=logging.DEBUG, format="%(asctime)s:%(levelname)s:%(funcName)s:%(message)s")
+
+app = Flask(__name__)
+
 def init_config() -> List[Dict]:
     # configures and initializes MySQL database.
-    
     config = {
     'user' : os.getenv("USER"),
     'password' : os.getenv("PASSWORD"),
@@ -51,8 +46,9 @@ def init_config() -> List[Dict]:
     return res
 
 def csv_to_json(csvFile):
-    # CSV to JSON parser
-
+    """
+    takes an input CSV file and returns its JSON representation.
+    """
     data = []
     with open(csvFile) as f:
         for row in csv.DictReader(f):
@@ -63,7 +59,6 @@ def csv_to_json(csvFile):
 @app.route('/')
 def index() -> str:
     # for debugging purposes: dumps all database.
- 
     return json.dumps({'weight_system': init_config()})
 
 @app.route('/weight', methods = ['POST'])
@@ -74,9 +69,8 @@ def post_weight(jsonData):
     """
     return json.dumps({'weight_system': init_config()})
 
-@app.route('/weight?direction=<str:direction>&truck=<str:truck_id>&containers=<arr:container_ids>&weight=<int:weight>&unit=<str:unit>&force=<bool:force>&produce=<str:produce>', methods = ['POST'])
-def post_weight(direction, truck_id, container_ids, weight, unit, force, produce):
->>>>>>> e8fa704fbfdaa583621ef08461ddaecf61e715e3
+@app.route('/weight', methods = ['POST'])
+def post_weight():
     """
     Note that "in" & "none" will generate a new session id, and "out" will return session id of previous "in" for the truck.
     Return json on success:
@@ -89,6 +83,14 @@ def post_weight(direction, truck_id, container_ids, weight, unit, force, produce
       "neto": <int> or "na" // na if some of containers have unknown tara
     }
     """
+    direction = request.args.get('direction')
+    truck_id = request.args.get('truck')
+    container_ids = request.args.get('containers')
+    weight = request.args.get('weight')
+    unit = request.args.get('unit')
+    force = request.args.get('force')
+    produce = request.args.get('produce')
+    # post values to db
     
     # return json on success
     pass  # temporary line, until function and return implemented
@@ -97,14 +99,9 @@ def post_weight(direction, truck_id, container_ids, weight, unit, force, produce
 def post_batch_weight(filename):
     """
     Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
+    File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
     """
-    # File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
-    
-    pass
-
-    with open('/in/{}'.format(filename), 'r') as f:
-        lines = f.readlines()
-    # do something with array `lines`
+    # do something with parameter `filename`
     
     # return something
     pass  # temporary line, until function and return implemented
