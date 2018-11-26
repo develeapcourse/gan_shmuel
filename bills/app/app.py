@@ -1,36 +1,63 @@
 from typing import List, Dict
-from flask import Flask
+from flask import Flask, request
 import mysql.connector
 import json
+import logging
+
+
 
 app = Flask(__name__)
 
 
-
-
-def favorite_colors() -> List[Dict]:
-    config = {
+databaseConfig = {
         'user': 'root',
         'password': 'root',
         'host': 'db',
         'port': '3306',
         'database': 'flaskApp'
     }
-    connection = mysql.connector.connect(**config)
+
+
+@app.route('/providerList')
+def providerList():
+    connection = mysql.connector.connect(**databaseConfig)
     cursor = connection.cursor()
-    cursor.execute('SELECT * FROM truck')
-    #print(cursor)
-    results = [{truckId: providerId} for (truckId, providerId) in cursor]
+    cursor.execute('SELECT * FROM provider')
+    results = [{providerId: providerName} for (providerId, providerName) in cursor]
     cursor.close()
     connection.close()
+    return str(results)
 
-    return results
+    
+
+@app.route('/provider/<id>', methods=["POST"])
+def providerUpdate(id):
+    try:
+        connection = mysql.connector.connect(**databaseConfig)
+        cursor = connection.cursor()  
+        cursor.execute('UPDATE provider SET providerName = "{0}" WHERE providerId = {1}'.format("newName provider", 1))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return "ok"
+    except Exception as e: 
+        return(e)
+    
+
+    
+@app.route('/rates', methods=["POST"])
+def uploadRates():
+    filename = request.form["file"]
+    print('Beginning file download with wget module')
+    url = 'in/rates.csv'  
+    wget.download(url, '/Users/scott/Downloads/cat4.jpg')  
+    return "OK"
 
 
 @app.route('/')
 def index() -> str:
     print("HI EVERY BODY")
-    return json.dumps({'FlaskApp': favorite_colors()})
+    return "IndexPage"
 
 
 @app.route('/health')

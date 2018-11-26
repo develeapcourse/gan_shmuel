@@ -21,8 +21,8 @@ import uuid
 
 
 # Setting .env path and loading its values
-env_path = Path('.') / '.env'
-load_dotenv(dotenv_path=env_path, verbose=True, override=True)
+#env_path = Path('.') / '.env'
+#load_dotenv(dotenv_path=env_path, verbose=True, override=True)
 
 # Logging default level is WARNING (30), So switch to level DEBUG (10)
 logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
