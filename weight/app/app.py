@@ -1,26 +1,3 @@
-# -*-coding:utf-8 -*
-from typing import List, Dict
-from flask import Flask, request, jsonify
-import datetime
-import logging
-import mysql.connector
-import uuid
-import csv
-import code
-import pdb
-
-"""
-Logging default level is WARNING (30), we want to debug when running,
-                  So switch to level DEBUG (10)
-"""
-logging.basicConfig(filename="test.log", level=logging.DEBUG, format="%(asctime)s:%(levelname)s:%(funcName)s:%(message)s")
-
-
-app = Flask(__name__)
-
-
-# Team: Michael, Raphael, Moria
-
 """
 Weight Application
 ------------------
@@ -28,6 +5,22 @@ Weight Application
   The WeightApp tracks all weights and allows payment to be for net weight.
   Reminder: Bruto = Neto (fruit) + Tara (truck) + sum(Tara(Containers))
 """
+
+# -*-coding:utf-8 -*
+from typing import List, Dict
+from flask import Flask, request, jsonify
+import code
+import csv
+import datetime
+import logging
+import mysql.connector
+import pdb
+import uuid
+
+# Logging default level is WARNING (30), we want to debug when running, so switch to level DEBUG (10)
+logging.basicConfig(filename="test.log", level=logging.DEBUG, format="%(asctime)s:%(levelname)s:%(funcName)s:%(message)s")
+
+app = Flask(__name__)
 
 def init_config() -> List[Dict]:
     """
@@ -50,7 +43,7 @@ def init_config() -> List[Dict]:
 
 def csv_to_json(csvFile):
     """
-    CSV to JSON parser
+    takes an input CSV file and returns its JSON representation.
     """
     data = []
     with open(csvFile) as f:
@@ -66,8 +59,8 @@ def index() -> str:
     """
     return json.dumps({'weight_system': init_config()})
 
-@app.route('/weight?direction=<str:direction>&truck=<str:truck_id>&containers=<arr:container_ids>&weight=<int:weight>&unit=<str:unit>&force=<bool:force>&produce=<str:produce>', methods = ['POST'])
-def post_weight(direction, truck_id, container_ids, weight, unit, force, produce):
+@app.route('/weight', methods = ['POST'])
+def post_weight():
     """
     Records data and server date-time and returns a json object with a unique weight.
     Note that "in" & "none" will generate a new session id, and "out" will return session id of previous "in" for the truck.
@@ -81,6 +74,14 @@ def post_weight(direction, truck_id, container_ids, weight, unit, force, produce
       "neto": <int> or "na" // na if some of containers have unknown tara
     }
     """
+    direction = request.args.get('direction')
+    truck_id = request.args.get('truck')
+    container_ids = request.args.get('containers')
+    weight = request.args.get('weight')
+    unit = request.args.get('unit')
+    force = request.args.get('force')
+    produce = request.args.get('produce')
+    # post values to db
     
     # return json on success
     pass  # temporary line, until function and return implemented
