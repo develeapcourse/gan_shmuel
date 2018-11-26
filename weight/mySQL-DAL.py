@@ -5,6 +5,9 @@ from mysql.connector import errorcode
 from __future__ import print_function
 from datetime import date, datetime, timedelta
 
+# Logging default level is WARNING (30), So switch to level DEBUG (10)
+logging.basicConfig(filename="test.log", level=logging.DEBUG, format="%(asctime)s:%(levelname)s:%(funcName)s:%(message)s")
+
 """
 ***try and catch to connecting to DB***
 try:
