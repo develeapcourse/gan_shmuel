@@ -5,6 +5,15 @@ import logging
 import mysql.connector
 import uuid
 import csv
+import code
+import pdb
+
+"""
+Logging default level is WARNING (30), we want to debug when running,
+                  So switch to level DEBUG (10)
+"""
+logging.basicConfig(filename="test.log", level=logging.DEBUG, format="%(asctime)s:%(levelname)s:%(funcName)s:%(message)s")
+
 
 app = Flask(__name__)
 
@@ -33,7 +42,7 @@ def init_config() -> List[Dict]:
     conn = mysql.connector.connect(**config)
     cur = conn.cur()
     cur.execute('SELECT * From weighings')
-    print(cur)
+    logging.debug(cur)
     cur.close()
     conn.close()
     return res
@@ -64,8 +73,8 @@ def post_weight(jsonData):
     Note that "in" & "none" will generate a new session id, and "out" will return session id of previous "in" for the truck.
     """
     data = request.get_json()  # testing
-    print('printing YAY!!')  # testing
-    print(data)  # testing
+    logging.debug('printing YAY!!')  # testing
+    logging.debug(data)  # testing
     return "returning YAY!!" + data  # testing
 
 @app.route('/batch-weight', methods = ['POST'])
@@ -120,4 +129,8 @@ def health(jsonData):
 
 
 if __name__ == '__main__':
+# Use interact() function to start the Interpreter with local namespace
+    code.interact(banner="Start", local=locals(), exitmsg="End")
+# Trigger Python Debugging Program
+    pdb.set_trace()
     app.run(host='0.0.0.0', debug=True, port=5000)
