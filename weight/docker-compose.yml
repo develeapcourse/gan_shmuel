@@ -6,6 +6,8 @@ services:
       - db
     ports:
       - "5000:5000"
+    volumes:
+      - ./app:/app
 
   db:
     image: mysql:5.7
