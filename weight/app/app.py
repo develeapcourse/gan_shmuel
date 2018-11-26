@@ -1,13 +1,9 @@
 # -*-coding:utf-8 -*
 from typing import List, Dict
-<<<<<<< HEAD
 from pathlib import Path  # python3 only
 from flask import Flask, request, json, jsonify
 import os
-=======
-from flask import Flask, request, jsonify
 import datetime
->>>>>>> e8fa704fbfdaa583621ef08461ddaecf61e715e3
 import logging
 import mysql.connector
 import uuid
@@ -40,19 +36,11 @@ def init_config() -> List[Dict]:
     # configures and initializes MySQL database.
     
     config = {
-<<<<<<< HEAD
     'user' : os.getenv("USER"),
     'password' : os.getenv("PASSWORD"),
     'host' : os.getenv("HOST"),
     'port' : os.getenv("PORT"),
     'database' : os.getenv("DATABASE")
-=======
-    'user' : 'root',
-    'pass  # temporary line, until function and return implementedword' : 'root',
-    'host' : 'db',
-    'port' : '3306',
-    'database' : 'weight_system'
->>>>>>> e8fa704fbfdaa583621ef08461ddaecf61e715e3
     }
     conn = mysql.connector.connect(**config)
     cur = conn.cur()
@@ -74,7 +62,6 @@ def csv_to_json(csvFile):
 
 @app.route('/')
 def index() -> str:
-<<<<<<< HEAD
     # for debugging purposes: dumps all database.
  
     return json.dumps({'weight_system': init_config()})
@@ -82,7 +69,6 @@ def index() -> str:
 @app.route('/weight', methods = ['POST'])
 def post_weight(jsonData):
     # Records data and server date-time and returns a json object with a unique weight.
-=======
     """
     for debugging purposes: dumps all database.
     """
@@ -112,18 +98,16 @@ def post_batch_weight(filename):
     """
     Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
     """
-<<<<<<< HEAD
     # File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
     
     pass
-=======
+
     with open('/in/{}'.format(filename), 'r') as f:
         lines = f.readlines()
     # do something with array `lines`
     
     # return something
     pass  # temporary line, until function and return implemented
->>>>>>> e8fa704fbfdaa583621ef08461ddaecf61e715e3
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
