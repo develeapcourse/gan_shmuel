@@ -9,6 +9,7 @@ Weight Application
 # -*-coding:utf-8 -*
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
+from os.path import isdir, islink
 import mySQL_DAL
 from pathlib import Path
 from typing import List, Dict
@@ -184,6 +185,10 @@ def health():
         connection = mysql.connector.connect(**init_config)
         connection.close()
     try:
+        path = "../in"
+        if isdir(path) == True && islink(path) == True
+            continue
+        elif isdir(path)
     # test read from /in directory
 
     # other tests...
