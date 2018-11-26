@@ -143,7 +143,7 @@ def get_item(item_id, t1, t2):
       "sessions": [ <id1>,...]
     }
     """
-    
+    return "petitpd"
     # return json
     pass  # temporary line, until function and return implemented
 
