@@ -1,12 +1,12 @@
 from typing import List, Dict
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 import mysql.connector
 import json
 import logging
 
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='')
 
 
 databaseConfig = {
@@ -17,6 +17,13 @@ databaseConfig = {
         'database': 'flaskApp'
     }
 
+
+@app.route('/rates')
+def getRates():
+    try:
+        return send_from_directory('in', "test.xlsx")
+    except Exception as e:
+        return e
 
 @app.route('/providerList')
 def providerList():

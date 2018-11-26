@@ -1,4 +1,4 @@
 Flask
 mysql-connector
 pathlib
-dotenv
+python-dotenv
