@@ -12,7 +12,7 @@ services:
       - /in
 
   service_db_weight:
-    image: mysql:5.7:weight_db_service
+    image: mysql:5.7
     environment:
       MYSQL_ROOT_PASSWORD: root
     volumes:
