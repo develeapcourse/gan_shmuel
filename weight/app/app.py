@@ -19,15 +19,6 @@ Weight Application
   Reminder: Bruto = Neto (fruit) + Tara (truck) + sum(Tara(Containers))
 """
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-def init_config() -> List[Dict]
-=======
-
-def init_config() -> List[Dict]:
->>>>>>> 27d6c89c195875e2a7ec822e0ed57b81dfadba30
-=======
-
 def init_config() -> List[Dict]:
 >>>>>>> 27d6c89c195875e2a7ec822e0ed57b81dfadba30
     """
@@ -47,15 +38,17 @@ def init_config() -> List[Dict]:
     cur.close()
     conn.close()
     return res
-"""
-CSV TO JSON PARSER
-"""
-data = []
-with open('file.csv') as f:
-    for row in csv.DictReader(f):
-        data.append(row)
 
-json_data = json.dumps(data)
+def csv_to_json(csvFile):
+    """
+    CSV to JSON parser
+    """
+    data = []
+    with open(csvFile) as f:
+        for row in csv.DictReader(f):
+            data.append(row)
+    json_data = json.dumps(data)
+    return json_data
 
 @app.route('/')
 def index() -> str:
