@@ -20,7 +20,6 @@ Weight Application
 """
 
 def init_config() -> List[Dict]:
->>>>>>> 27d6c89c195875e2a7ec822e0ed57b81dfadba30
     """
     configures and initializes MySQL database.
     """
