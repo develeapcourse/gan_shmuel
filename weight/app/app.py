@@ -1,6 +1,8 @@
 # -*-coding:utf-8 -*
 from typing import List, Dict
+from pathlib import Path  # python3 only
 from flask import Flask, request, json, jsonify
+import os
 import logging
 import mysql.connector
 import uuid
@@ -8,10 +10,11 @@ import csv
 import code
 import pdb
 
-"""
-Logging default level is WARNING (30), we want to debug when running,
-                  So switch to level DEBUG (10)
-"""
+# Setting .env path and loading its values
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path, verbose=True, override=True)
+
+# Logging default level is WARNING (30), So switch to level DEBUG (10)
 logging.basicConfig(filename="test.log", level=logging.DEBUG, format="%(asctime)s:%(levelname)s:%(funcName)s:%(message)s")
 
 
@@ -29,15 +32,14 @@ Weight Application
 """
 
 def init_config() -> List[Dict]:
-    """
-    configures and initializes MySQL database.
-    """
+    # configures and initializes MySQL database.
+    
     config = {
-    'user' : 'root',
-    'password' : 'root',
-    'host' : 'db',
-    'port' : '3306',
-    'database' : 'weight_system'
+    'user' : os.getenv("USER"),
+    'password' : os.getenv("PASSWORD"),
+    'host' : os.getenv("HOST"),
+    'port' : os.getenv("PORT"),
+    'database' : os.getenv("DATABASE")
     }
     conn = mysql.connector.connect(**config)
     cur = conn.cur()
@@ -48,9 +50,8 @@ def init_config() -> List[Dict]:
     return res
 
 def csv_to_json(csvFile):
-    """
-    CSV to JSON parser
-    """
+    # CSV to JSON parser
+
     data = []
     with open(csvFile) as f:
         for row in csv.DictReader(f):
@@ -60,16 +61,14 @@ def csv_to_json(csvFile):
 
 @app.route('/')
 def index() -> str:
-    """
-    for debugging purposes: dumps all database.
-
-    """
+    # for debugging purposes: dumps all database.
+ 
     return json.dumps({'weight_system': init_config()})
 
 @app.route('/weight', methods = ['POST'])
 def post_weight(jsonData):
+    # Records data and server date-time and returns a json object with a unique weight.
     """
-    Records data and server date-time and returns a json object with a unique weight.
     Note that "in" & "none" will generate a new session id, and "out" will return session id of previous "in" for the truck.
     """
     data = request.get_json()  # testing
@@ -81,8 +80,9 @@ def post_weight(jsonData):
 def post_batch_weight(jsonData):
     """
     Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
-    File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
     """
+    # File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
+    
     pass
 
 @app.route('/unknown', methods = ['GET'])
