@@ -1,4 +1,6 @@
 import mysql.connector
+import logging
+import json
 from mysql.connector import errorcode
 from __future__ import print_function
 from datetime import date, datetime, timedelta
@@ -19,7 +21,7 @@ else:
   cnx.close()
 """
 
-================
+
 def insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_id, produce ):
 
 	cnx = mysql.connector.connect(user='root', database='weight_system')
@@ -31,19 +33,16 @@ def insert_weight(session_id, date_time, weight, unit, direction, truck_id, cont
 
 	# Insert new weight
 	cursor.execute(add_weight, data_weight)
-	# *if needed? or already initilaized*  weight_no = cursor.lastrowid
 
 	# Make sure data is committed to the database
 	cnx.commit()
 
 	cursor.close()
 	cnx.close()
-
-        bot_logger.logger.info("Save weight for session=%s, date=%s, weight=%s, unit=%s, direction=%s, truck=%s,  container/s=%s, produce=%s" % (session_id, date_time, weight, unit, direction,  truck_id, container_id, produce))
-================
+        logger.info("Save weight for session=%s, date=%s, weight=%s, unit=%s, direction=%s, truck=%s,  container/s=%s, produce=%s" % (session_id, date_time, weight, unit, direction,  truck_id, container_id, produce))
 
 
-================
+
 def insert_tara_container(container_id, container_weight, unit):
 
 	cnx = mysql.connector.connect(user='root', database='weight_system')
@@ -55,19 +54,16 @@ def insert_tara_container(container_id, container_weight, unit):
 
 	# Insert new weight
 	cursor.execute(add_tara_container, data_container)
-	# *if needed? or already initilaized*  container_no = cursor.lastrowid
 
 	# Make sure data is committed to the database
 	cnx.commit()
 
 	cursor.close()
 	cnx.close()
-
-        bot_logger.logger.info("Save weight for containerId=%s, weight=%s, units=%s, date=%s" % (containerId, weight, units, date))
-================
+        logger.info("Save weight for containerId=%s, weight=%s, units=%s, date=%s" % (containerId, weight, units, date))
 
 
-================
+
 def insert_tara_truck(truck_id, truck_weight, unit):
 
 	cnx = mysql.connector.connect(user='root', database='weight_system')
@@ -79,19 +75,16 @@ def insert_tara_truck(truck_id, truck_weight, unit):
 
 	# Insert new weight
 	cursor.execute(add_tara_truck, data_truck)
-	# *if needed? or already initilaized*  truck_no = cursor.lastrowid
 
 	# Make sure data is committed to the database
 	cnx.commit()
 
 	cursor.close()
 	cnx.close()
-
-        bot_logger.logger.info("Save weight for truck_id=%s, truck_weight=%s, unit=%s" % (truck_id, truck_weight, unit))
-================
+        logger.info("Save weight for truck_id=%s, truck_weight=%s, unit=%s" % (truck_id, truck_weight, unit))
 
 
-================
+
 def get_unknown_weight_containers():
 	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
@@ -99,37 +92,41 @@ def get_unknown_weight_containers():
 	query = ("SELECT container_id FROM tara_containers "
          	"WHERE weight==NULL")
 	cursor.execute(query)
-
-	"""
-	return as json with list of containerId 
-		-for (containerId) in cursor:
- 			print("container %s" % containerId)
-	"""
+        rv = cur.fetchall()
+        payload = []
+        content = {}
+        for result in rv:
+                 content = {result[0]}
+        payload.append(content)
+        content = {}
+  
 	cursor.close()
 	cnx.close()
+        logger.info("send containers that have unknown weight")
+  
+        return jsonify(payload)
 
-        bot_logger.logger.info("send containers that have unknown weight")
-================
 
-
-================
 def get_session_by_time(fromTime, toTime, direction):
 	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	query = ("SELECT session_id, date_time, weight, unit, direction, truck_id, container_id produce  "
+	query = ("SELECT *  "
                  "FROM weighings "
-         	 "WHERE direction==%s and "
-		 "date_time BETWEEN %s and %s ")
+         	 "WHERE direction=%s AND date_time BETWEEN %s and %s ")
 	cursor.execute(query, (direction, fromTime, toTime))
+	row_headers=[x[0] for x in cur.description] #this will extract row headers
+        rv = cur.fetchall()
+        json_data=[]
+        for result in rv:
+     		   json_data.append(dict(zip(row_headers,result)))
 
-	"""
-	return as json with list of  json objects, one per weighing (batch NOT included)
-	"""
 	cursor.close()
 	cnx.close()
+        logger.info("send sessions list with details")
 
-        bot_logger.logger.info("send sessions list with details")
+        return json.dumps(json_data)
+
 
 """
 [{ "id": <id>,
@@ -140,79 +137,68 @@ def get_session_by_time(fromTime, toTime, direction):
    "containers": [ id1, id2, ...]
 },...]
 """
-================
 
-
-================	
 def get_tara_container(containerId ,fromTime, toTime):
 	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	query = ("SELECT container_id, container_weight, unit, date_time "
+	query = ("SELECT * "
                  "FROM tara_containers "
-         	 "WHERE container_id==%s and "
-		 "date_time BETWEEN %s and %s ")
+         	 "WHERE container_id=%s AND date_time BETWEEN %s and %s ")
 	cursor.execute(query, (containerId, fromTime, toTime))
-
-	"""
-	return as json with list of containers  or 404 if not found
-	"""
+        row_headers=[x[0] for x in cur.description] #this will extract row headers
+        rv = cur.fetchall()
+        json_data=[]
+        for result in rv:
+                 json_data.append(dict(zip(row_headers,result)))
+ 
 	cursor.close()
 	cnx.close()
+        logger.info("send containers in some time range")
+        return json.dumps(json_data)
 
-        bot_logger.logger.info("send containers in some time range")
-================
 
-
-================
 def get_tara_truck(truck_id ,fromTime, toTime):
 	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	query = ("SELECT truck_id, weight, unit, date_time "
+	query = ("SELECT * "
                  "FROM weighings "
-         	 "WHERE truck_id==%s and "
-		 "date_time BETWEEN %s and %s ")
+         	 "WHERE truck_id=%s AND date_time BETWEEN %s and %s ")
 	cursor.execute(query, (truck_id, fromTime, toTime))
-
-	"""
-	return as json with list of tracks or 404 if not found
-	"""
+        row_headers=[x[0] for x in cur.description] #this will extract row headers
+        rv = cur.fetchall()
+        json_data=[]
+        for result in rv:
+                 json_data.append(dict(zip(row_headers,result)))
+	
 	cursor.close()
 	cnx.close()
+        logger.info("send tracks in some time range")
+        return json.dumps(json_data)
 
-        bot_logger.logger.info("send tracks in some time range")
-================
 
 
-================
 def get_session_weight(sessionId):
 	cnx = mysql.connector.connect(user='root', database='weight_system')
 	cursor = cnx.cursor()
 
-	query = ("SELECT session_id, direction, date_time, truck_id, weight, unit, container_id,  "
+	query = ("SELECT *  "
                  "FROM weighings "
-         	 "WHERE session_id==%s")
+         	 "WHERE session_id=%s")
 	cursor.execute(query, sessionId)
-
-	"""
-	return as json with specific session details or 404 if not found
-	"""
+        row_headers=[x[0] for x in cur.description] #this will extract row headers
+        rv = cur.fetchall()
+        json_data=[]
+        for result in rv:
+                 json_data.append(dict(zip(row_headers,result)))
+  
 	cursor.close()
 	cnx.close()
+        logger.info("send specific session details")
 
-        bot_logger.logger.info("send specific session details")
+        return json.dumps(json_data)
 
- """
- { "id": <str>, 
-   "truck": <truck-id> or "na",
-   "bruto": <int>,
-   ONLY for OUT:
-   "truckTara": <int>,
-   "neto": <int> or "na" // na if some of containers unknown
- }
-"""
-================
 
 
 
