@@ -161,7 +161,7 @@ def get_session(session_id):
     }
     """
     session_id = request.args['session_id']
-    
+
     # return json
 
 @app.route('/health', methods = ['GET'])
