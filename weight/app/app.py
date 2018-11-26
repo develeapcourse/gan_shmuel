@@ -9,7 +9,7 @@ Weight Application
 # -*-coding:utf-8 -*
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
-from mySQL_DAL import *
+import mySQL_DAL
 from pathlib import Path
 from typing import List, Dict
 import csv
@@ -97,9 +97,17 @@ def post_batch_weight(filename):
     File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
     """
     # do something with parameter `filename`
-    
-    # return something
-    pass  # temporary line, until function and return implemented
+    if filename.endswith('.csv'):
+        jsonData = csv_to_json(filename)
+    elif filename.endswith('.json'):
+        with open(filename, 'r') as f:
+            jsonData = f.readlines()
+    else:
+        return 'Error: illegal filetype.'
+
+    print(jsonData)
+
+    return 'ok'
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
@@ -107,12 +115,11 @@ def get_unknown_containers():
     Returns a list of all recorded containers that have unknown weight:
     ["id1","id2",...]
     """
-    
-    # return array of strings
-    pass  # temporary line, until function and return implemented
+    unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
+    return unknown_container_arr
 
 @app.route('/weight?from=<string:t1>&to=<string:t2>&filter=<string:filter>', methods = ['GET'])  # /weight?from=t1&to=t2&filter=f
-def get_weight_from_file(t1, t2, directions = ['in', 'out', 'none']):
+def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
     """
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
     - directions - comma delimited list of directions. default is "in,out,none"
