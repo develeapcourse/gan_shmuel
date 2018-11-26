@@ -1,9 +1,9 @@
 from typing import List, Dict
 from flask import Flask, request, send_from_directory
 import mysql.connector
+import openpyxl as xl
 import json
 import logging
-
 
 
 app = Flask(__name__, static_url_path='')
@@ -12,7 +12,7 @@ app = Flask(__name__, static_url_path='')
 databaseConfig = {
         'user': 'root',
         'password': 'root',
-        'host': 'db',
+        'host': 'billingservicedb',
         'port': '3306',
         'database': 'flaskApp'
     }
@@ -25,6 +25,7 @@ def getRates():
     except Exception as e:
         return e
 
+
 @app.route('/providerList')
 def providerList():
     connection = mysql.connector.connect(**databaseConfig)
@@ -35,7 +36,6 @@ def providerList():
     connection.close()
     return str(results)
 
-    
 
 @app.route('/provider/<id>', methods=["POST"])
 def providerUpdate(id):
@@ -49,16 +49,40 @@ def providerUpdate(id):
         return "ok"
     except Exception as e: 
         return(e)
-    
 
-    
-@app.route('/rates', methods=["POST"])
-def uploadRates():
-    filename = request.form["file"]
-    print('Beginning file download with wget module')
-    url = 'in/rates.csv'  
-    wget.download(url, '/Users/scott/Downloads/cat4.jpg')  
-    return "OK"
+
+@app.route("/rates",methods=["POST"])
+def postrates():
+    filename = request.args.get("file")
+
+    try:
+        wb = xl.load_workbook("in/" + filename )
+        ws = wb.get_active_sheet()
+        connection = mysql.connector.connect(**databaseConfig)
+        cursor = connection.cursor()
+        sql_insert_rates_query = "INSERT INTO rates (productName, scope, rates) VALUES (%s, %s, %s)"
+        cursor.execute('TRUNCATE TABLE rates')
+        row = 2
+        while ws.cell(row, 1).value is not None:
+            productName = ws.cell(row, 1).value
+            rate = ws.cell(row, 2).value
+            scope = ws.cell(row, 3).value
+            insert_tuple = (productName, scope, rate)
+            cursor.execute(sql_insert_rates_query, insert_tuple)
+            row += 1
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return "RATES UPLOADED"
+    except FileNotFoundError:
+        return "File Not Found"
+
+    except mysql.connector.Error as error:
+        return "Rates uploading failed {}".format(error)
+
+    except Exception as error:
+        return "Error {}".format(error)
 
 
 @app.route('/')
@@ -70,7 +94,6 @@ def index() -> str:
 @app.route('/health')
 def health()-> str:
     return "ok"
-
 
 
 if __name__ == '__main__':
