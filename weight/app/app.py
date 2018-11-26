@@ -7,7 +7,7 @@ Weight Application
 """
 
 # -*-coding:utf-8 -*
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from mySQL_DAL import *
 from pathlib import Path
