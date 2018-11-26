@@ -167,21 +167,17 @@ def get_session(session_id):
 
 @app.route('/health', methods = ['GET'])
 def health():
-    """
-    health function...
-    """
+    # health function must return ok
     try:
         connection = mysql.connector.connect(**init_config)
         connection.close()
-    try:
         path = "../in"
-        isdir(path) == True && islink(path) == True
-        if os.listdir(path) == []: 
-            raise SizeError 
-        else: 
-        return "ok"
+        if isdir(path) == True && islink(path) == True
+        elif os.listdir(path) != []: 
+           return "ok"
+        break 
     except Exception as e:
-        return e
+        return "Error: %s" % e
 # others tests...
 
 if __name__ == '__main__':
