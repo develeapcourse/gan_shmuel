@@ -81,16 +81,9 @@ def post_weight(direction, truck_id, container_ids, weight, unit, force, produce
       "neto": <int> or "na" // na if some of containers have unknown tara
     }
     """
-<<<<<<< HEAD
     
     # return json on success
     pass  # temporary line, until function and return implemented
-=======
-    data = request.get_json()  # testing
-    logging.debug('printing YAY!!')  # testing
-    logging.debug(data)  # testing
-    return "returning YAY!!" + data  # testing
->>>>>>> origin/master
 
 @app.route('/batch-weight?file=<str:filename>', methods = ['POST'])
 def post_batch_weight(filename):
@@ -175,12 +168,8 @@ def health():
 
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-    logger.info('Starting Flask server...')
-=======
-# Use interact() function to start the Interpreter with local namespace
+    # Use interact() function to start the Interpreter with local namespace
     code.interact(banner="Start", local=locals(), exitmsg="End")
-# Trigger Python Debugging Program
+    # Trigger Python Debugging Program
     pdb.set_trace()
->>>>>>> origin/master
     app.run(host='0.0.0.0', debug=True, port=5000)
