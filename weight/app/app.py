@@ -8,7 +8,7 @@ Weight Application
 
 # -*-coding:utf-8 -*
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, json, jsonify
 import mySQL_DAL
 from pathlib import Path
 from typing import List, Dict
@@ -21,8 +21,8 @@ import uuid
 
 
 # Setting .env path and loading its values
-env_path = Path('.') / '.env'
-load_dotenv(dotenv_path=env_path, verbose=True, override=True)
+#env_path = Path('.') / '.env'
+#load_dotenv(dotenv_path=env_path, verbose=True, override=True)
 
 # Logging default level is WARNING (30), So switch to level DEBUG (10)
 logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
@@ -59,10 +59,7 @@ def csv_to_json(csvFile):
 
 @app.route('/')
 def index() -> str:
-    """
-    for debugging purposes: dumps all database.
-    """
-    return json.dumps({'weight_system': init_config()})
+    return 'Weight appliaction - please refer to spec. file for API instructions.'
 
 @app.route('/weight', methods = ['POST'])
 def post_weight():
@@ -78,36 +75,33 @@ def post_weight():
       "neto": <int> or "na" // na if some of containers have unknown tara
     }
     """
-    direction = request.args.get('direction')
-    truck_id = request.args.get('truck')
-    container_ids = request.args.get('containers')
-    weight = request.args.get('weight')
-    unit = request.args.get('unit')
-    force = request.args.get('force')
-    produce = request.args.get('produce')
+    direction = request.form['direction']
+    truck_id = request.form['truck']
+    container_ids = request.form['containers']
+    weight = request.form['weight']
+    unit = request.form['unit']
+    force = request.form['force']
+    produce = request.form['produce']
     # post values to db
-    
+
     # return json on success
     pass  # temporary line, until function and return implemented
 
-@app.route('/batch-weight?file=<string:filename>', methods = ['POST'])
-def post_batch_weight(filename):
+@app.route('/batch-weight', methods = ['POST'])
+def post_batch_weight():
     """
     Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
     File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
     """
-    # do something with parameter `filename`
+    filename = request.form['file']
+
     if filename.endswith('.csv'):
         jsonData = csv_to_json(filename)
     elif filename.endswith('.json'):
-        with open(filename, 'r') as f:
+        with open('/in/{}'.format(filename), 'r') as f:
             jsonData = f.readlines()
     else:
         return 'Error: illegal filetype.'
-
-    print(jsonData)
-
-    return 'ok'
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
@@ -115,10 +109,11 @@ def get_unknown_containers():
     Returns a list of all recorded containers that have unknown weight:
     ["id1","id2",...]
     """
+    logging.info('Retrieving from database: IDs for containers with unknown weight.')
     unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
     return unknown_container_arr
 
-@app.route('/weight?from=<string:t1>&to=<string:t2>&filter=<string:filter>', methods = ['GET'])  # /weight?from=t1&to=t2&filter=f
+@app.route('/weight?from=<string:t1>&to=<string:t2>&filter=<string:filter>', methods = ['GET'])
 def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
     """
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
@@ -126,11 +121,13 @@ def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
     default t1 is "today at 000000". default t2 is "now".
     returns an array of json objects, one per weighing (batch NOT included)
     """
+    t1 = request.args['from']
+    t2 = request.args['to']
+    filt = request.arg['filter']  # variable not named filter due to existing object in python.
     
     # return array of json objects
-    pass  # temporary line, until function and return implemented
 
-@app.route('/item/<string:id>?from=<string:t1>&to=<string:t2>', methods = ['GET'])  # /item/<id>?from=t1&to=t2
+@app.route('/item/<string:id>?from=<string:t1>&to=<string:t2>', methods = ['GET'])
 def get_item(item_id, t1, t2):
     """
     - id is for an item (truck or container). 404 will be returned if non-existent
@@ -143,11 +140,13 @@ def get_item(item_id, t1, t2):
       "sessions": [ <id1>,...]
     }
     """
+    item_id = request.args['id']
+    t1 = request.args['from']
+    t2 = request.args['to']
     
     # return json
-    pass  # temporary line, until function and return implemented
 
-@app.route('/session/<string:id>', methods = ['GET'])  # /session/<id>
+@app.route('/session/<string:session_id>', methods = ['GET'])
 def get_session(session_id):
     """
     session_id is for a weighing session. 404 will be returned if non-existent.
@@ -161,9 +160,9 @@ def get_session(session_id):
       "neto": <int> or "na" // na if some of containers unknown
     }
     """
+    session_id = request.args['session_id']
     
     # return json
-    pass  # temporary line, until function and return implemented
 
 @app.route('/health', methods = ['GET'])
 def health():
@@ -173,14 +172,11 @@ def health():
     try:
         connection = mysql.connector.connect(**init_config)
         connection.close()
-    try:
     # test read from /in directory
-
     # other tests...
         return "ok"
-    except Exception as e: 
-        return(e)
-    pass  # temporary line, until function and return implemented
+    except Exception as e:
+        return e
 
 
 if __name__ == '__main__':
