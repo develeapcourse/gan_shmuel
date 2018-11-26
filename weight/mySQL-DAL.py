@@ -42,7 +42,7 @@ def insert_weight(session_id, date_time, weight, unit, direction, truck_id, cont
 
 	cursor.close()
 	cnx.close()
-        logger.info("Save weight for session=%s, date=%s, weight=%s, unit=%s, direction=%s, truck=%s,  container/s=%s, produce=%s" % (session_id, date_time, weight, unit, direction,  truck_id, container_id, produce))
+        logging.info("Save weight for session=%s, date=%s, weight=%s, unit=%s, direction=%s, truck=%s,  container/s=%s, produce=%s" % (session_id, date_time, weight, unit, direction,  truck_id, container_id, produce))
 
 
 
@@ -63,7 +63,7 @@ def insert_tara_container(container_id, container_weight, unit):
 
 	cursor.close()
 	cnx.close()
-        logger.info("Save weight for containerId=%s, weight=%s, units=%s, date=%s" % (containerId, weight, units, date))
+        logging.info("Save weight for containerId=%s, weight=%s, units=%s, date=%s" % (containerId, weight, units, date))
 
 
 
@@ -84,7 +84,7 @@ def insert_tara_truck(truck_id, truck_weight, unit):
 
 	cursor.close()
 	cnx.close()
-        logger.info("Save weight for truck_id=%s, truck_weight=%s, unit=%s" % (truck_id, truck_weight, unit))
+        logging.info("Save weight for truck_id=%s, truck_weight=%s, unit=%s" % (truck_id, truck_weight, unit))
 
 
 
@@ -105,7 +105,7 @@ def get_unknown_weight_containers():
   
 	cursor.close()
 	cnx.close()
-        logger.info("send containers that have unknown weight")
+        logging.info("send containers that have unknown weight")
   
         return jsonify(payload)
 
@@ -126,7 +126,7 @@ def get_session_by_time(fromTime, toTime, direction):
 
 	cursor.close()
 	cnx.close()
-        logger.info("send sessions list with details")
+        logging.info("send sessions list with details")
 
         return json.dumps(json_data)
 
@@ -157,7 +157,7 @@ def get_tara_container(containerId ,fromTime, toTime):
  
 	cursor.close()
 	cnx.close()
-        logger.info("send containers in some time range")
+        logging.info("send containers in some time range")
         return json.dumps(json_data)
 
 
@@ -177,7 +177,7 @@ def get_tara_truck(truck_id ,fromTime, toTime):
 	
 	cursor.close()
 	cnx.close()
-        logger.info("send tracks in some time range")
+        logging.info("send tracks in some time range")
         return json.dumps(json_data)
 
 
@@ -198,7 +198,7 @@ def get_session_weight(sessionId):
   
 	cursor.close()
 	cnx.close()
-        logger.info("send specific session details")
+        logging.info("send specific session details")
 
         return json.dumps(json_data)
 
