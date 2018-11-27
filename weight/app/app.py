@@ -163,7 +163,7 @@ def get_item():  # This doesn't belong in the function params: " item_id, t1=tim
                     sessions.append(v['session_id'])
     else:
           tara= data_tara_track[0]['weight'] + data_tara_track[0]['unit']
-          for k,v in data_weighings.items():
+          for k,v in data_weighings:
               if v['date'] >= t1 and v['date'] <= t2:
                    for con in v['container_id']:
                        if con == item_id:
