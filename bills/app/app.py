@@ -32,7 +32,7 @@ def truckInsert():
           connection.close()
           return ('A  %d truck was added successfully'%(int(request.form["truckId"])))
        else:
-         logging.info("This provider does not exist in the system")
+         logging.error("This provider does not exist in the system")
          return ("This %d provider does not exist in the system"%(int(request.form["providerId"])))
     except Exception as e:
         logging.error("Failed to add %d provider"%(int(request.form["truckId"])))
