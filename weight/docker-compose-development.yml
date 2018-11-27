@@ -9,7 +9,7 @@ services:
       - 5000:5000
     volumes:
       - ./app:/app
-      - ./in:/in
+      - ./app/in:/in
 
   service_db_weight:
     image: mysql:5.7
