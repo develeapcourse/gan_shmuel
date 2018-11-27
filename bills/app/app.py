@@ -7,7 +7,7 @@ import requests
 import logging
 
 from datetime import datetime
-app = Flask(__name__, static_url_path='')
+app = Flask(__name__, static_url_path='/')
 
 
 logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
@@ -180,7 +180,7 @@ def postrates():
     filename = request.args.get("file")
 
     try:
-        wb = xl.load_workbook("in/" + filename )
+        wb = xl.load_workbook("/in/" + filename )
         ws = wb.get_active_sheet()
         connection = mysql.connector.connect(**databaseConfig)
         cursor = connection.cursor()
