@@ -167,18 +167,27 @@ def get_session(session_id):
 
 @app.route('/health', methods = ['GET'])
 def health():
-    # health function must return ok
+    """
+    health function tests various components of service, if all are well it will return ok.
+    """
+    # test db connection
     try:
         connection = mysql.connector.connect(**init_config)
         connection.close()
-        path = "../in"
-        if isdir(path) == True && islink(path) == True
-        elif os.listdir(path) != []: 
-           return "ok"
-        break 
     except Exception as e:
-        return "Error: %s" % e
-# others tests...
+        logging.error('Database connection failed with error %s' % e)
+        return 'Error: %s' % e
+
+    # test existence of /in dir
+    try:
+        path = '../in'
+        if isdir(path) and islink(path):
+            pass
+    except Exception as e:
+        logging.error('`/in` directory doesn\'t exist.')
+        return 'Error: %s' % e
+
+    return 'ok'
 
 if __name__ == '__main__':
     logging.info('Starting Flask server...')
