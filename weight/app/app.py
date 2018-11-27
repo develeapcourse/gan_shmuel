@@ -19,7 +19,9 @@ import logging
 import mysql.connector
 import os
 import uuid
-
+import json
+import datetime
+from time import gmtime, strftime
 
 # Setting .env path and loading its values
 #env_path = Path('.') / '.env'
@@ -123,7 +125,7 @@ def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
     # return array of json objects
 
 @app.route('/item/<string:id>?from=<string:t1>&to=<string:t2>', methods = ['GET'])
-def get_item(item_id, t1, t2):
+def get_item(item_id, t1=time.strftime('%Y%m%d%H%M%S',date(date.today().year, 1, 1)), t2=strftime('%Y%m%d%H%M%S', gmtime())):
     """
     - id is for an item (truck or container). 404 will be returned if non-existent
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
@@ -135,10 +137,40 @@ def get_item(item_id, t1, t2):
       "sessions": [ <id1>,...]
     }
     """
+    
     item_id = request.args['id']
     t1 = request.args['from']
     t2 = request.args['to']
     
+    data_tara_container = json.load(get_tara_container(item_id))
+    data_tara_truck = json.load(get_tara_truck(item_id))
+    data_weighings = json.load(get_session_by_time(t1,t2))
+    
+    return_data = {}
+    sessions = []
+    tara = ""
+    if data_tara_container == []:
+        if data_tara_track == []:
+             return("404 not-found")
+             logging.error("404 non-existent item, item-id: %s" % item_id)
+        else:
+             tara= data_tara_track[0]['weight'] + data_tara_track[0]['unit']
+             for k,v in data_weighings.items()
+                 if v['track_id'] == item_id and v['date'] >= t1 and v['date'] <= t2
+                     sessions.append(v['session_id'])
+     else:
+          tara= data_tara_track[0]['weight'] + data_tara_track[0]['unit']
+          for k,v in data_weighings.items()
+              if v['date'] >= t1 and v['date'] <= t2
+                   for con in v['container_id']
+                       if con == item_id
+                           sessions.append(v['session_id'])
+     data['id'] = item_id
+     data['tara'] = tara
+     data['sessions'] = sessions 
+     json_data = json.dumps(return_data)
+     
+     return json.dumps(json_data)
     # return json
 
 @app.route('/session/<string:session_id>', methods = ['GET'])

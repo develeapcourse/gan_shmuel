@@ -11,11 +11,10 @@ EXPOSE 5000
 WORKDIR /app
 
 # Install any needed packages specified in requirements.txt
-COPY requirements.txt /app
-RUN pip3 install -r requirements.txt
+COPY requirements.txt /tmp
+RUN pip3 install -r /tmp/requirements.txt
 
 # Run app.py when the container launches
 COPY app.py /app
 COPY mySQL_DAL.py /app
-COPY in/ /in
 CMD python3 app.py
