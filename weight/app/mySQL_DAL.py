@@ -100,14 +100,14 @@ def get_unknown_weight_containers():
 
     return jsonify(payload)
 
-def get_session_by_time(fromTime, toTime, direction):
+def get_session_by_time(fromTime, toTime):
     cnx = mysql.connector.connect(user='root', database='weight_system')
     cursor = cnx.cursor()
 
     query = ("SELECT *  "
              "FROM weighings "
-             "WHERE direction=%s AND date_time BETWEEN %s and %s ")
-    cursor.execute(query, (direction, fromTime, toTime))
+             "WHERE date_time BETWEEN %s and %s ")
+    cursor.execute(query, (fromTime, toTime))
     row_headers=[x[0] for x in cur.description] #this will extract row headers
     rv = cur.fetchall()
     json_data=[]
@@ -131,14 +131,14 @@ def get_session_by_time(fromTime, toTime, direction):
 },...]
 """
 
-def get_tara_container(containerId ,fromTime, toTime):
+def get_tara_container(containerId):
     cnx = mysql.connector.connect(user='root', database='weight_system')
     cursor = cnx.cursor()
 
     query = ("SELECT * "
              "FROM tara_containers "
-             "WHERE container_id=%s AND date_time BETWEEN %s and %s ")
-    cursor.execute(query, (containerId, fromTime, toTime))
+             "WHERE container_id=%s")
+    cursor.execute(query, (containerId))
     row_headers=[x[0] for x in cur.description] #this will extract row headers
     rv = cur.fetchall()
     json_data=[]
@@ -147,17 +147,17 @@ def get_tara_container(containerId ,fromTime, toTime):
 
     cursor.close()
     cnx.close()
-    logger.info("send containers in some time range")
+    logger.info("send specific container")
     return json.dumps(json_data)
 
-def get_tara_truck(truck_id ,fromTime, toTime):
+def get_tara_truck(truck_id):
     cnx = mysql.connector.connect(user='root', database='weight_system')
     cursor = cnx.cursor()
 
     query = ("SELECT * "
              "FROM weighings "
-             "WHERE truck_id=%s AND date_time BETWEEN %s and %s ")
-    cursor.execute(query, (truck_id, fromTime, toTime))
+             "WHERE truck_id=%s")
+    cursor.execute(query, (truck_id))
     row_headers=[x[0] for x in cur.description] #this will extract row headers
     rv = cur.fetchall()
     json_data=[]
@@ -166,7 +166,7 @@ def get_tara_truck(truck_id ,fromTime, toTime):
 
     cursor.close()
     cnx.close()
-    logger.info("send tracks in some time range")
+    logger.info("send specific track")
     return json.dumps(json_data)
 
 def get_session_weight(sessionId):

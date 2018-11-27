@@ -1,15 +1,38 @@
 #!/bin/bash
 
-image_tag = "latest"
+set -e
 
-if $1; then
-    image_tag = $1
+# service directories
+weight_app_path="../weight/app"
+bills_app_path="../bills/app"
+docker_compose_destinations='-f ../bills/docker-compose.yml -f ../weight/docker-compose.yml -f ./docker-compose.override.yml'
+
+image_tag="latest"
+
+build_img_by_path ()
+{
+    path=$1
+    tag=$2
+    
+    echo $path ' ' $tag
+
+    docker build -f $path/Dockerfile --tag $tag $path
+
+    return $?
+}
+
+if [ $# -ne 0 ]; then
+    image_tag=$1
 fi
 
-for f in $(find ../ -name 'docker-compose.*'); do
-    sed -i -E 's/(image:.*)/\1:$image_tag/' $f
-done
+echo "Tagging images with version $image_tag"
 
-docker-compose -f ../bills/docker-compose.yml -f ../weight/docker-compose.yml -f ./docker-compose.override.yml up -d
+build_img_by_path $weight_app_path $image_tag && build_img_by_path $bills_app_path $image_tag
+
+docker-compose $docker_compose_destinations up -d
+
+pip install -U pytest
 
 ./sanity.py
+
+docker-compose $docker_compose_destinations down
