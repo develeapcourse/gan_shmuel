@@ -90,12 +90,13 @@ def post_batch_weight():
     filename = request.form['file']
 
     if filename.endswith('.csv'):
-        jsonData = csv_to_json(filename)
+        jsonData = csv_to_json('/in/{}'.format(filename))
     elif filename.endswith('.json'):
         with open('/in/{}'.format(filename), 'r') as f:
             jsonData = f.readlines()
     else:
         return 'Error: illegal filetype.'
+    return 'recieved filename {}'.format(filename)
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
