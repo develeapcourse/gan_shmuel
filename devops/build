@@ -6,7 +6,7 @@ set -e
 base_dir_path=".."
 
 if (( $# > 1 )); then
-    base_dir_path=$2$base_dir_path
+    base_dir_path=$2
 fi
 
 weight_path=$base_dir_path"/weight"
