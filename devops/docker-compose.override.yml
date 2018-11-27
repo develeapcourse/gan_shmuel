@@ -10,6 +10,7 @@ services:
 
     billingserviceapp:
         image: billingserviceapp
+
         volumes:
             - bill_rates:/in
         ports:
