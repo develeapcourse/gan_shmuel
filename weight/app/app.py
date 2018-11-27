@@ -161,8 +161,8 @@ def get_session(session_id):
         cursor = connection.cursor()  
         cursor.execute('SELECT * FROM weighings WHERE session_id=%s' % session_id)
         sessionInfos=cursor.fetchall()
-        
-     except Exception as e:
+        print("coucou")
+    except Exception as e:
         logging.error('Request failed with error: %s' % e)
         return 'Error: %s' % e
     # return json
