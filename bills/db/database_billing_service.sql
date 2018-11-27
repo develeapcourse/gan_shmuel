@@ -28,3 +28,5 @@ FOREIGN KEY (providerId)
 REFERENCES provider (providerId)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION;
+
+insert into truck values(13,1);
