@@ -7,6 +7,9 @@ import logging
 
 app = Flask(__name__, static_url_path='')
 
+
+logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+
 databaseConfig = {
         'user': 'root',
         'password': 'root',
@@ -17,22 +20,23 @@ databaseConfig = {
 
 @app.route('/truckInsert', methods=["POST"])
 def truckInsert():
-       logging.info('Add new truck to the table')
+    try:
        connection = mysql.connector.connect(**databaseConfig)
        cursor = connection.cursor()
        cursor.execute('SELECT * FROM provider WHERE providerId = %d'%(int(request.form["providerId"])))
        myProviderId = [{providerId} for (providerId) in cursor]
        if myProviderId:
-        try:
           cursor.execute('INSERT INTO truck VALUES (%d, %d)'%((int(request.form["truckId"])),int(request.form["providerId"])))
+          logging.info('A new truck %d was added successfully'%(int(request.form["truckId"])))
           connection.commit()
-        except Exception as e:
-          return  e
-        cursor.close()
-        connection.close()
-        return "aa"
+          cursor.close()
+          connection.close()
+          return ('A new truck %d was added successfully'%(int(request.form["truckId"])))
        else:
-             return "This provider does not exist in the system"
+         logging.info("This provider does not exist in the system")
+         return ("This provider %d does not exist in the system"%(int(request.form["providerId"])))
+    except Exception as e:
+        logging.error("Failed - Adding a new truck %d"%(int(request.form["truckId"])))
       # return json.dumps({'FlaskApp': listTruck()})
 
 
@@ -73,7 +77,6 @@ def getRates():
 
 
 @app.route('/providerList')
-<<<<<<< HEAD
 def providerList() -> List[Dict]:
     try:
      logging.info('View all providers')
