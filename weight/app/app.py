@@ -172,7 +172,8 @@ def health():
         connection = mysql.connector.connect(**init_config)
         connection.close()
         path = "../in"
-        if isdir(path) == True && islink(path) == True
+        if isdir(path) == True and islink(path) == True:
+           
         elif os.listdir(path) != []: 
            return "ok"
         break 
