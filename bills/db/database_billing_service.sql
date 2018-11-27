@@ -16,7 +16,7 @@ CREATE TABLE provider (
 INSERT into provider VALUES (1,"Provider 1");
 
 CREATE TABLE truck (
-                truckId INT NOT NULL AUTO_INCREMENT,
+                truckId INT NOT NULL,
                 providerId INT NOT NULL,
                 PRIMARY KEY (truckId)
 );
@@ -28,3 +28,5 @@ FOREIGN KEY (providerId)
 REFERENCES provider (providerId)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION;
+
+insert into truck values(13,1);
