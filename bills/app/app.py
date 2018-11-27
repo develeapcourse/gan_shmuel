@@ -3,9 +3,10 @@ from flask import Flask, request, send_from_directory
 import mysql.connector
 import openpyxl as xl
 import json
+import requests
 import logging
-import urlparse
 
+from datetime import datetime
 app = Flask(__name__, static_url_path='')
 
 databaseConfig = {
@@ -80,6 +81,7 @@ def providerList():
     connection.close()
     return str(results)
 
+
 def listProvider() -> List[Dict]:
     connection = mysql.connector.connect(**databaseConfig)
     cursor = connection.cursor()
@@ -104,18 +106,31 @@ def providerUpdate(id):
         return(str(e))
     
 
+@app.route('/truck/<id>', methods=["GET"])
+def get_truck(id):
 
-@app.route('/truck/<id>?<path>')
-def getTruck(id):
-    url = 'http://example.com/?q=abc&p=123'
-    par = urlparse.parse_qs(urlparse.urlparse(url).query)
+    date_from = request.args.get("from")
+    date_to = request.args.get("to")
 
-    return str(par)
+    # Checking the dateFrom validity
+    if date_from is None:
+        # By default the date_from is from the first day of the current month
+        date_from = datetime.now().strftime('%Y%m01000000')
+    elif re.match("^[0-9]{14}$", date_from) is None:
+        return "The format of date from is not correct"
+
+    # Checking the dateTo format
+    if date_to is None:
+        # By default the date_to is now
+        date_to = datetime.now().strftime('%Y%m%d%H%M%S')
+    elif re.match("^[0-9]{14}$", date_to) is None:
+        return "The format of date to is not correct"
+
     try:
-        r = requests.get('http://service_app_weight:5000/item/{0}'.format(id))
-        return r.json()
-    except Exception as e:
-        return str(e)
+        response = requests.get('http://service_app_weight:5000/item/{0}?from={1}&to={2}'.format(id,date_from,date_to))
+        return response.json()
+    except Exception as error:
+        return str(error)
 
 
 @app.route('/truckList')
