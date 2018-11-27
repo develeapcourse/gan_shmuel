@@ -4,6 +4,7 @@ import mysql.connector
 import openpyxl as xl
 import json
 import logging
+import urlparse
 
 app = Flask(__name__, static_url_path='')
 
@@ -15,7 +16,7 @@ databaseConfig = {
         'database': 'flaskApp'
     }
 
-@app.route('/truckInsert', methods=["POST"])
+@app.route('/truck', methods=["POST"])
 def truckInsert():
        try:
          connection = mysql.connector.connect(**databaseConfig)
@@ -27,29 +28,28 @@ def truckInsert():
              cursor.execute('INSERT INTO truck VALUES (%d, %d)'%((int(request.form["truckId"])),int(request.form["providerId"])))
              connection.commit()
            except Exception as e:
-             return  e
+             return  str(e)
            cursor.close()
            connection.close()
            return json.dumps({'FlaskApp': listTruck()})
          else:
              return "This provider does not exist in the system"
        except Exception as e:
-              return e
+              return str(e)
 
 
-@app.route('/providerInsert', methods=["POST"])
+@app.route('/provider', methods=["POST"])
 def providerInsert():
        try:
         connection = mysql.connector.connect(**databaseConfig)
         cursor = connection.cursor()
         cursor.execute('INSERT INTO provider VALUES (NULL, "%s")'%(request.form["providerName"]))
-        #cursor.execute('INSERT INTO provider VALUES (providerId,providerName)')
         connection.commit()
         cursor.close()
         connection.close()
         return json.dumps({'FlaskApp': listProvider()})
        except Exception as e:
-          return e
+          return str(e)
 
 @app.route('/listTruck')
 def listTruck() -> List[Dict]:
@@ -65,9 +65,9 @@ def listTruck() -> List[Dict]:
 @app.route('/rates')
 def getRates():
     try:
-        return send_from_directory('in', "test.xlsx")
+        return send_from_directory('in', "rates.xlsx")
     except Exception as e:
-        return e
+        return str(e)
 
 
 @app.route('/providerList')
@@ -84,7 +84,6 @@ def listProvider() -> List[Dict]:
     connection = mysql.connector.connect(**databaseConfig)
     cursor = connection.cursor()
     cursor.execute('SELECT * FROM provider')
-    #print(cursor)
     results = [{providerId: providerName} for (providerId, providerName) in cursor]
     cursor.close()
     connection.close()
@@ -96,14 +95,53 @@ def providerUpdate(id):
     try:
         connection = mysql.connector.connect(**databaseConfig)
         cursor = connection.cursor()  
-        cursor.execute('UPDATE provider SET providerName = "{0}" WHERE providerId = {1}'.format("newName provider", 1))
+        cursor.execute('UPDATE provider SET providerName = "{0}" WHERE providerId = {1}'.format(request.form["providerName"], id))
         connection.commit()
         cursor.close()
         connection.close()
         return "ok"
     except Exception as e: 
-        return(e)
+        return(str(e))
+    
 
+
+@app.route('/truck/<id>?<path>')
+def getTruck(id):
+    url = 'http://example.com/?q=abc&p=123'
+    par = urlparse.parse_qs(urlparse.urlparse(url).query)
+
+    return str(par)
+    try:
+        r = requests.get('http://service_app_weight:5000/item/{0}'.format(id))
+        return r.json()
+    except Exception as e:
+        return str(e)
+
+
+@app.route('/truckList')
+def truckList():
+    connection = mysql.connector.connect(**databaseConfig)
+    cursor = connection.cursor()
+    cursor.execute('SELECT * FROM truck')
+    results = [{truckId: providerId} for (truckId, providerId) in cursor]
+    cursor.close()
+    connection.close()
+    return str(results)
+
+    
+@app.route('/truck/<id>', methods=["POST"])
+def truckUpdate(id):
+    try:
+        connection = mysql.connector.connect(**databaseConfig)
+        cursor = connection.cursor()  
+        cursor.execute('UPDATE truck SET providerId = "{0}" WHERE truckId = {1}'.format(request.form["providerId"], id))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return "ok"
+    except Exception as e: 
+        return(str(e))
+    
 
 @app.route("/rates",methods=["POST"])
 def postrates():

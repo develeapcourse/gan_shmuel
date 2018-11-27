@@ -38,7 +38,7 @@ def insert_weight(session_id, date_time, weight, unit, direction, truck_id, cont
 
     cursor.close()
     cnx.close()
-    logger.info("Save weight for session=%s, date=%s, weight=%s, unit=%s, direction=%s, truck=%s,  container/s=%s, produce=%s" % (session_id, date_time, weight, unit, direction,  truck_id, container_id, produce))
+    logger.info("Saved weight for session=%s, date=%s, weight=%s, unit=%s, direction=%s, truck=%s,  container/s=%s, produce=%s" % (session_id, date_time, weight, unit, direction,  truck_id, container_id, produce))
 
 
 
