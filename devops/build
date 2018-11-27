@@ -3,11 +3,21 @@
 set -e
 
 # service directories
-weight_app_path="../weight/app"
-bills_app_path="../bills/app"
-docker_compose_destinations='-f ../bills/docker-compose.yml -f ../weight/docker-compose.yml -f ./docker-compose.override.yml'
+base_dir_path=".."
+
+if (( $# > 1 )); then
+    base_dir_path=$2
+fi
+
+weight_path=$base_dir_path"/weight"
+bills_path=$base_dir_path"/bills"
+devops_path=$base_dir_path"/devops"
+docker_compose_destinations='-f '$bills_path'/docker-compose.yml -f '$weight_path'/docker-compose.yml -f '$devops_path'/docker-compose.override.yml'
 
 image_tag="latest"
+if [ $# -ne 0 ]; then
+    image_tag=$1
+fi
 
 build_img_by_path ()
 {
@@ -21,18 +31,15 @@ build_img_by_path ()
     return $?
 }
 
-if [ $# -ne 0 ]; then
-    image_tag=$1
-fi
 
 echo "Tagging images with version $image_tag"
 
-build_img_by_path $weight_app_path $image_tag && build_img_by_path $bills_app_path $image_tag
+build_img_by_path $weight_path/app $image_tag && build_img_by_path $bills_path/app $image_tag
 
 docker-compose $docker_compose_destinations up -d
 
 pip install -U pytest
 
-./sanity.py
+./$devops_path/sanity.py
 
 docker-compose $docker_compose_destinations down
