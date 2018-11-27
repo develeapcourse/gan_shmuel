@@ -32,13 +32,13 @@ def truckInsert():
           connection.commit()
           cursor.close()
           connection.close()
-          return ('A  %d truck was added successfully'%(int(request.form["truckId"])))
+          return str('A  %d truck was added successfully'%(int(request.form["truckId"])))
        else:
          logging.error("This provider does not exist in the system")
          return ("This %d provider does not exist in the system"%(int(request.form["providerId"])))
     except Exception as e:
         logging.error("Failed to add %d provider"%(int(request.form["truckId"])))
-        return e
+        return str(e)
  
 @app.route('/provider', methods=["POST"])
 def providerInsert():
@@ -69,7 +69,7 @@ def listTruck() -> List[Dict]:
      return str(results)
     except Exception as e:
         logging.error("Failed to view all trucks")
-        return e
+        return str(e)
 
 @app.route('/rates')
 def getRates():
@@ -94,7 +94,7 @@ def providerList() -> List[Dict]:
      return str(results)
     except Exception as e:
         logging.error("Failed to view all providers")
-        return e
+        return str(e)
 
 
 @app.route('/provider/<id>', methods=["POST"])
@@ -119,44 +119,52 @@ def get_truck(id):
     date_from = request.args.get("from")
     date_to = request.args.get("to")
 
-    # Checking the dateFrom validity
-    if date_from is None:
+    if id is None:
+        logging.info("No truck id")
+        return "No truck id"
+    elif date_from is None:
         # By default the date_from is from the first day of the current month
         date_from = datetime.now().strftime('%Y%m01000000')
     elif re.match("^[0-9]{14}$", date_from) is None:
-         logging.error("The format of date from {0} is not correct".format(date_from))
-         return str ("The format of date from {0} is not correct".format(date_from))
+        logging.error("The format of date from {0} is not correct".format(date_from))
+        return str ("The format of date from {0} is not correct".format(date_from))
 
     # Checking the dateTo format
     if date_to is None:
         # By default the date_to is now
         date_to = datetime.now().strftime('%Y%m%d%H%M%S')
     elif re.match("^[0-9]{14}$", date_to) is None:
-         logging.error("The format of date to {0} is not correct".format(date_to))
-         return str ("The format of date to {0} is not correct".format(date_to))
+        logging.error("The format of date to {0} is not correct".format(date_to))
+        return str("The format of date to {0} is not correct".format(date_to))
 
     try:
         response = requests.get('http://service_app_weight:5000/item/{0}?from={1}&to={2}'.format(id,date_from,date_to))
-        logging.error("successfully get truck id={0} from={1} to={2}".format(id,date_from,date_to))
+
+        if response.status_code == 404:
+            logging.error("Truck not found")
+            return "Truck not found"
+
+        logging.info("successfully get truck id={0} from={1} to={2}".format(id,date_from,date_to))
         return response.json()
     except Exception as error:
-        return str("get_truck: " + error)
+        logging.error("get_truck: {0}".format( error))
+        return str("get_truck: {0}".format( error))
 
 
 @app.route('/truckList')
 def truckList():
     try:
-     connection = mysql.connector.connect(**databaseConfig)
-     cursor = connection.cursor()
-     cursor.execute('SELECT * FROM truck')
-     results = [{truckId: providerId} for (truckId, providerId) in cursor]
-     cursor.close()
-     connection.close()
-     logging.info('Show all trucks successfully completed')
-     return str(results)
+        connection = mysql.connector.connect(**databaseConfig)
+        cursor = connection.cursor()
+        cursor.execute('SELECT * FROM truck')
+        results = [{truckId: providerId} for (truckId, providerId) in cursor]
+        cursor.close()
+        connection.close()
+        logging.info('Show all trucks successfully completed')
+        return str(results)
     except Exception as e:
         logging.error("Failed to view all trucks")
-        return e
+        return str(e)
 
     
 @app.route('/truck/<id>', methods=["POST"])
@@ -172,7 +180,7 @@ def truckUpdate(id):
         return "ok"
     except Exception as e:
         logging.error("Failed to update %s provider"%id)
-        return(str(e))
+        return str(e)
     
 
 @app.route("/rates",methods=["POST"])
