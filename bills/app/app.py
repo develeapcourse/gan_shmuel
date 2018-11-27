@@ -3,6 +3,7 @@ from flask import Flask, request, send_from_directory
 import mysql.connector
 import json
 import logging
+import urlparse
 
 
 
