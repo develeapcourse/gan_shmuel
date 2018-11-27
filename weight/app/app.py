@@ -39,13 +39,6 @@ def init_config() -> List[Dict]:
     'port' : os.getenv('PORT'),
     'database' : os.getenv('DATABASE')
     }
-    conn = mysql.connector.connect(**config)
-    cur = conn.cur()
-    cur.execute('SELECT * From weighings')
-    logging.debug(cur)
-    cur.close()
-    conn.close()
-    return res
 
 def csv_to_json(csvFile):
     """
@@ -60,7 +53,7 @@ def csv_to_json(csvFile):
 
 @app.route('/')
 def index() -> str:
-    return 'Weight appliaction - please refer to spec. file for API instructions.'
+    return 'Weight application - please refer to spec. file for API instructions.'
 
 @app.route('/weight', methods = ['POST'])
 def post_weight():
@@ -162,7 +155,16 @@ def get_session(session_id):
     }
     """
     session_id = request.args['session_id']
-
+    sessionInfos = []
+    try:
+        connection = mysql.connector.connect(**init_config)
+        cursor = connection.cursor()  
+        cursor.execute('SELECT * FROM weighings WHERE session_id=%s' % session_id)
+        sessionInfos=cursor.fetchall()
+        
+     except Exception as e:
+        logging.error('Request failed with error: %s' % e)
+        return 'Error: %s' % e
     # return json
 
 @app.route('/health', methods = ['GET'])
