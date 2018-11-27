@@ -100,14 +100,14 @@ def get_unknown_weight_containers():
 
     return jsonify(payload)
 
-def get_session_by_time(fromTime, toTime, direction):
+def get_session_by_time(fromTime, toTime):
     cnx = mysql.connector.connect(user='root', database='weight_system')
     cursor = cnx.cursor()
 
     query = ("SELECT *  "
              "FROM weighings "
-             "WHERE direction=%s AND date_time BETWEEN %s and %s ")
-    cursor.execute(query, (direction, fromTime, toTime))
+             "WHERE date_time BETWEEN %s and %s ")
+    cursor.execute(query, (fromTime, toTime))
     row_headers=[x[0] for x in cur.description] #this will extract row headers
     rv = cur.fetchall()
     json_data=[]
