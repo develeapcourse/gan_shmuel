@@ -5,10 +5,11 @@ services:
     links:
       - billingservicedb
     ports:
-      - 5000
+      - 5000:5000
     volumes:
       - ./app:/app
-      - /in
+      - ./app/in:/in
+
 
   billingservicedb:
     image: mysql:5.7

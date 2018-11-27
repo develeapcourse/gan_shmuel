@@ -3,9 +3,11 @@ from flask import Flask, request, send_from_directory
 import mysql.connector
 import openpyxl as xl
 import json
+import requests
 import logging
 
-app = Flask(__name__, static_url_path='')
+from datetime import datetime
+app = Flask(__name__, static_url_path='/')
 
 
 logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
@@ -37,7 +39,7 @@ def truckInsert():
     except Exception as e:
         logging.error("Failed to add %d provider"%(int(request.form["truckId"])))
         return e
-
+ 
 @app.route('/provider', methods=["POST"])
 def providerInsert():
        logging.info('Add new provider to the table')
@@ -94,6 +96,7 @@ def providerList() -> List[Dict]:
         logging.error("Failed to view all providers")
         return e
 
+
 @app.route('/provider/<id>', methods=["POST"])
 def providerUpdate(id):
     try:
@@ -107,7 +110,37 @@ def providerUpdate(id):
         return "ok"
     except Exception as e:
         logging.error("Failed to update %s provider"%id)
-        return(e)
+        return str(e)
+    
+
+@app.route('/truck/<id>', methods=["GET"])
+def get_truck(id):
+
+    date_from = request.args.get("from")
+    date_to = request.args.get("to")
+
+    # Checking the dateFrom validity
+    if date_from is None:
+        # By default the date_from is from the first day of the current month
+        date_from = datetime.now().strftime('%Y%m01000000')
+    elif re.match("^[0-9]{14}$", date_from) is None:
+         logging.error("The format of date from {0} is not correct".format(date_from))
+         return str ("The format of date from {0} is not correct".format(date_from))
+
+    # Checking the dateTo format
+    if date_to is None:
+        # By default the date_to is now
+        date_to = datetime.now().strftime('%Y%m%d%H%M%S')
+    elif re.match("^[0-9]{14}$", date_to) is None:
+         logging.error("The format of date to {0} is not correct".format(date_to))
+         return str ("The format of date to {0} is not correct".format(date_to))
+
+    try:
+        response = requests.get('http://service_app_weight:5000/item/{0}?from={1}&to={2}'.format(id,date_from,date_to))
+        logging.error("successfully get truck id={0} from={1} to={2}".format(id,date_from,date_to))
+        return response.json()
+    except Exception as error:
+        return str("get_truck: " + error)
 
 
 @app.route('/truckList')
@@ -147,7 +180,7 @@ def postrates():
     filename = request.args.get("file")
 
     try:
-        wb = xl.load_workbook("in/" + filename )
+        wb = xl.load_workbook("/in/" + filename )
         ws = wb.get_active_sheet()
         connection = mysql.connector.connect(**databaseConfig)
         cursor = connection.cursor()
