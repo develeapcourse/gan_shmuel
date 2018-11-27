@@ -18,30 +18,16 @@ import csv
 import datetime
 import logging
 import mysql.connector
-import os
 import uuid
 import json
 import datetime
 from time import gmtime, strftime
 
-# Setting .env path and loading its values
-#env_path = Path('.') / '.env'
-#load_dotenv(dotenv_path=env_path, verbose=True, override=True)
-
 # Logging default level is WARNING (30), So switch to level DEBUG (10)
-logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
+# make flask instance of our app
 app = Flask(__name__)
-
-def init_config() -> List[Dict]:
-    # configures and initializes MySQL database.
-    config = {
-    'user' : os.getenv('USER'),
-    'password' : os.getenv('PASSWORD'),
-    'host' : os.getenv('HOST'),
-    'port' : os.getenv('PORT'),
-    'database' : os.getenv('DATABASE')
-    }
 
 def csv_to_json(csvFile):
     """
@@ -55,7 +41,7 @@ def csv_to_json(csvFile):
     return json_data
 
 @app.route('/')
-def index() -> str:
+def index():
     return 'Weight application - please refer to spec. file for API instructions.'
 
 @app.route('/weight', methods = ['POST'])
@@ -115,7 +101,6 @@ def get_unknown_containers():
     Returns a list of all recorded containers that have unknown weight:
     ["id1","id2",...]
     """
-    logging.info('Retrieving from database: IDs for containers with unknown weight.')
     unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
     return unknown_container_arr
 
@@ -196,8 +181,8 @@ def get_session(session_id):
     """
     sessionInfos = []
     try:
-        connection = mysql.connector.connect(**init_config)
-        cursor = connection.cursor()  
+        connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+        cursor = connection.cursor()
         cursor.execute('SELECT * FROM weighings WHERE session_id=%s' % session_id)
         sessionInfos=cursor.fetchall()
         print("coucou")
@@ -213,8 +198,8 @@ def health():
     """
     # test db connection
     try:
-        connection = mysql.connector.connect(**init_config)
-        connection.close()
+        cnx = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+        cnx.close()
     except Exception as e:
         logging.error('Database connection failed with error %s' % e)
         return 'Error: %s' % e
