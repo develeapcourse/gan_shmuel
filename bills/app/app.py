@@ -17,28 +17,29 @@ databaseConfig = {
 
 @app.route('/truckInsert', methods=["POST"])
 def truckInsert():
-       try:
-         connection = mysql.connector.connect(**databaseConfig)
-         cursor = connection.cursor()
-         cursor.execute('SELECT * FROM provider WHERE providerId = %d'%(int(request.form["providerId"])))
-         myProviderId = [{providerId} for (providerId) in cursor]
-         if myProviderId:
-           try:
-             cursor.execute('INSERT INTO truck VALUES (%d, %d)'%((int(request.form["truckId"])),int(request.form["providerId"])))
-             connection.commit()
-           except Exception as e:
-             return  e
-           cursor.close()
-           connection.close()
-           return json.dumps({'FlaskApp': listTruck()})
-         else:
+       logging.info('Add new truck to the table')
+       connection = mysql.connector.connect(**databaseConfig)
+       cursor = connection.cursor()
+       cursor.execute('SELECT * FROM provider WHERE providerId = %d'%(int(request.form["providerId"])))
+       myProviderId = [{providerId} for (providerId) in cursor]
+       if myProviderId:
+        try:
+          cursor.execute('INSERT INTO truck VALUES (%d, %d)'%((int(request.form["truckId"])),int(request.form["providerId"])))
+          connection.commit()
+        except Exception as e:
+          return  e
+        cursor.close()
+        connection.close()
+        return "aa"
+       else:
              return "This provider does not exist in the system"
-       except Exception as e:
-              return e
+      # return json.dumps({'FlaskApp': listTruck()})
+
 
 
 @app.route('/providerInsert', methods=["POST"])
 def providerInsert():
+       logging.info('Add new provider to the table')
        try:
         connection = mysql.connector.connect(**databaseConfig)
         cursor = connection.cursor()
@@ -47,12 +48,13 @@ def providerInsert():
         connection.commit()
         cursor.close()
         connection.close()
-        return json.dumps({'FlaskApp': listProvider()})
+        return json.dumps({'FlaskApp': providerList()})
        except Exception as e:
           return e
 
 @app.route('/listTruck')
 def listTruck() -> List[Dict]:
+    logging.info('View all trucks')
     connection = mysql.connector.connect(**databaseConfig)
     cursor = connection.cursor()
     cursor.execute('SELECT * FROM truck')
@@ -70,29 +72,24 @@ def getRates():
         return e
 
 @app.route('/providerList')
-def providerList():
-    connection = mysql.connector.connect(**databaseConfig)
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM provider')
-    results = [{providerId: providerName} for (providerId, providerName) in cursor]
-    cursor.close()
-    connection.close()
-    return str(results)
-
-
-def listProvider() -> List[Dict]:
-    connection = mysql.connector.connect(**databaseConfig)
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM provider')
-    #print(cursor)
-    results = [{providerId: providerName} for (providerId, providerName) in cursor]
-    cursor.close()
-    connection.close()
-    return results  
+def providerList() -> List[Dict]:
+    try:
+     logging.info('View all providers')
+     connection = mysql.connector.connect(**databaseConfig)
+     cursor = connection.cursor()
+     cursor.execute('SELECT * FROM provider')
+     results = [{providerId: providerName} for (providerId, providerName) in cursor]
+     cursor.close()
+     connection.close()
+     return str(results)
+    except Exception as e:
+        logging.error("Can't view tha all providers")
+        return e
 
 @app.route('/provider/<id>', methods=["POST"])
 def providerUpdate(id):
     try:
+        logging.info('Provider Update %s'%id)
         connection = mysql.connector.connect(**databaseConfig)
         cursor = connection.cursor()  
         cursor.execute('UPDATE provider SET providerName = "{0}" WHERE providerId = {1}'.format("newName provider", 1))
@@ -100,7 +97,8 @@ def providerUpdate(id):
         cursor.close()
         connection.close()
         return "ok"
-    except Exception as e: 
+    except Exception as e:
+        logging.error("Can't update provider %s"%id)
         return(e)
 
 @app.route('/')
@@ -114,6 +112,7 @@ def health()-> str:
     return "ok"
 
 if __name__ == '__main__':
+    logging.info('Starting Flask server...')
     print("Hi Bro")
     app.run(host='0.0.0.0',debug=True)
 
