@@ -10,9 +10,10 @@ Weight Application
 from dotenv import load_dotenv
 from flask import Flask, request, json, jsonify
 from os.path import isdir, islink
-import mySQL_DAL
 from pathlib import Path
 from typing import List, Dict
+import ast
+import mySQL_DAL
 import csv
 import datetime
 import logging
@@ -92,16 +93,21 @@ def post_batch_weight():
     filename = request.form['file']
 
     if filename.endswith('.csv'):
-        jsonData = csv_to_json('/in/{}'.format(filename))
-        return jsonData
+        jsonData = csv_to_json('/in/{}'.format(filename))  # returns weight as string instead of int
     elif filename.endswith('.json'):
         with open('/in/{}'.format(filename), 'r') as f:
             jsonData = str(json.load(f))
-            return jsonData
     else:
+        logging.error('File passed to /batch-weight/{} of invalid format.'.format(filename))
         return 'Error: illegal filetype.'
 
-    return 'recieved filename {}'.format(filename)
+    jsonData = ast.literal_eval(jsonData)
+    for obj in jsonData:
+        item_id = obj['id']
+        weight = obj['weight']
+        unit = obj['unit']
+        mySQL_DAL.insert_tara_container(item_id, weight, unit)
+    return 'Read file "/in/{}" and uploaded to database.'.format(filename)
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
@@ -127,8 +133,8 @@ def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
     
     # return array of json objects
 
-@app.route('/item/<string:id>?from=<string:t1>&to=<string:t2>', methods = ['GET'])
-def get_item():  # This doesn't belong in the function params: " item_id, t1=time.strftime('%Y%m%d%H%M%S',date(date.today().year, 1, 1)), t2=strftime('%Y%m%d%H%M%S', gmtime()) "
+@app.route('/item/<string:item_id>', methods = ['GET'])
+def get_item(item_id):  # This doesn't belong in the function params: " item_id, t1=time.strftime('%Y%m%d%H%M%S',date(date.today().year, 1, 1)), t2=strftime('%Y%m%d%H%M%S', gmtime()) "
     """
     - id is for an item (truck or container). 404 will be returned if non-existent
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
@@ -141,7 +147,6 @@ def get_item():  # This doesn't belong in the function params: " item_id, t1=tim
     }
     """
 
-    item_id = request.args['id']
     t1 = request.args['from']
     t2 = request.args['to']
 
@@ -189,7 +194,6 @@ def get_session(session_id):
       "neto": <int> or "na" // na if some of containers unknown
     }
     """
-    session_id = request.args['session_id']
     sessionInfos = []
     try:
         connection = mysql.connector.connect(**init_config)
