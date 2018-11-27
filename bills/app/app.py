@@ -4,7 +4,6 @@ import mysql.connector
 import openpyxl as xl
 import json
 import logging
-import urlparse
 
 app = Flask(__name__, static_url_path='')
 
@@ -28,16 +27,16 @@ def truckInsert():
        myProviderId = [{providerId} for (providerId) in cursor]
        if myProviderId:
           cursor.execute('INSERT INTO truck VALUES (%d, %d)'%((int(request.form["truckId"])),int(request.form["providerId"])))
-          logging.info('A new truck %d was added successfully'%(int(request.form["truckId"])))
           connection.commit()
           cursor.close()
           connection.close()
-          return ('A new truck %d was added successfully'%(int(request.form["truckId"])))
+          return ('A  %d truck was added successfully'%(int(request.form["truckId"])))
        else:
          logging.info("This provider does not exist in the system")
-         return ("This provider %d does not exist in the system"%(int(request.form["providerId"])))
+         return ("This %d provider does not exist in the system"%(int(request.form["providerId"])))
     except Exception as e:
-        logging.error("Failed - Adding a new truck %d"%(int(request.form["truckId"])))
+        logging.error("Failed to add %d provider"%(int(request.form["truckId"])))
+        return e
 
 @app.route('/provider', methods=["POST"])
 def providerInsert():
@@ -49,82 +48,82 @@ def providerInsert():
         connection.commit()
         cursor.close()
         connection.close()
+        logging.info('A %s provider was added successfully'%(request.form["providerName"]))
         return json.dumps({'FlaskApp': providerList()})
        except Exception as e:
+          logging.error("Failed to add truck %s"%(request.form["providerName"]))
           return str(e)
 
 @app.route('/truckList')
 def listTruck() -> List[Dict]:
-    logging.info('View all trucks')
-    connection = mysql.connector.connect(**databaseConfig)
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM truck')
-    #print(cursor)
-    results = [{truckId: providerId} for (truckId, providerId) in cursor]
-    cursor.close()
-    connection.close()
-    return str(results)
+    try:
+     connection = mysql.connector.connect(**databaseConfig)
+     cursor = connection.cursor()
+     cursor.execute('SELECT * FROM truck')
+     results = [{truckId: providerId} for (truckId, providerId) in cursor]
+     cursor.close()
+     connection.close()
+     logging.info('Show all trucks successfully completed')
+     return str(results)
+    except Exception as e:
+        logging.error("Failed to view all trucks")
+        return e
 
 @app.route('/rates')
 def getRates():
     try:
         return send_from_directory('in', "rates.xlsx")
+        logging.info("rates.xlsx file downloaded successfully")
     except Exception as e:
+        logging.error("Failed to download file rates.xlsx")
         return str(e)
 
 
 @app.route('/providerList')
 def providerList() -> List[Dict]:
     try:
-     logging.info('View all providers')
      connection = mysql.connector.connect(**databaseConfig)
      cursor = connection.cursor()
      cursor.execute('SELECT * FROM provider')
      results = [{providerId: providerName} for (providerId, providerName) in cursor]
      cursor.close()
      connection.close()
+     logging.info('Show all providers successfully completed')
      return str(results)
     except Exception as e:
-        logging.error("Can't view tha all providers")
+        logging.error("Failed to view all providers")
         return e
 
 @app.route('/provider/<id>', methods=["POST"])
 def providerUpdate(id):
     try:
-        logging.info('Provider Update %s'%id)
         connection = mysql.connector.connect(**databaseConfig)
         cursor = connection.cursor()  
         cursor.execute('UPDATE provider SET providerName = "{0}" WHERE providerId = {1}'.format(request.form["providerName"], id))
         connection.commit()
         cursor.close()
         connection.close()
+        logging.info('%s provider Update'%id)
         return "ok"
     except Exception as e:
-        logging.error("Can't update provider %s"%id)
+        logging.error("Failed to update %s provider"%id)
         return(e)
 
 
-@app.route('/truck/<id>?<path>')
-def getTruck(id):
-    url = 'http://example.com/?q=abc&p=123'
-    par = urlparse.parse_qs(urlparse.urlparse(url).query)
-
-    return str(par)
-    try:
-        r = requests.get('http://service_app_weight:5000/item/{0}'.format(id))
-        return r.json()
-    except Exception as e:
-        return str(e)
-
 @app.route('/truckList')
 def truckList():
-    connection = mysql.connector.connect(**databaseConfig)
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM truck')
-    results = [{truckId: providerId} for (truckId, providerId) in cursor]
-    cursor.close()
-    connection.close()
-    return str(results)
+    try:
+     connection = mysql.connector.connect(**databaseConfig)
+     cursor = connection.cursor()
+     cursor.execute('SELECT * FROM truck')
+     results = [{truckId: providerId} for (truckId, providerId) in cursor]
+     cursor.close()
+     connection.close()
+     logging.info('Show all trucks successfully completed')
+     return str(results)
+    except Exception as e:
+        logging.error("Failed to view all trucks")
+        return e
 
     
 @app.route('/truck/<id>', methods=["POST"])
@@ -136,8 +135,10 @@ def truckUpdate(id):
         connection.commit()
         cursor.close()
         connection.close()
+        logging.info('%s truck Update'%id)
         return "ok"
-    except Exception as e: 
+    except Exception as e:
+        logging.error("Failed to update %s provider"%id)
         return(str(e))
     
 
@@ -164,14 +165,18 @@ def postrates():
         connection.commit()
         cursor.close()
         connection.close()
+        logging.info("RATES UPLOADED")
         return "RATES UPLOADED"
     except FileNotFoundError:
+        logging.error("File Not Found")
         return "File Not Found"
 
     except mysql.connector.Error as error:
+        logging.error("Rates uploading failed {}".format(error))
         return "Rates uploading failed {}".format(error)
 
     except Exception as error:
+        logging.error("Error {}".format(error))
         return "Error {}".format(error)
 
 @app.route('/')
