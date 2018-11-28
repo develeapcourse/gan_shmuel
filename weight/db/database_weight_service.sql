@@ -19,7 +19,7 @@ CREATE TABLE tara_containers (
 CREATE TABLE weighings (
         id INT(11) NOT NULL AUTO_INCREMENT,
         session_id VARCHAR(50) NOT NULL,
-        datetime VARCHAR(14) NOT NULL,
+        datetime INT(14) NOT NULL,
         weight VARCHAR(5) NOT NULL,
         unit VARCHAR(3) NOT NULL,
         direction VARCHAR(4) NOT NULL,
