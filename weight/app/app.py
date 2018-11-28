@@ -175,7 +175,6 @@ def post_batch_weight():
     """
     try:
         filename = request.form['file']
-
         if filename.endswith('.csv'):
             jsonData = csv_to_json(filename)
             jsonData = csv_to_json('/in/{}'.format(filename))  # returns weight as string instead of int
@@ -189,13 +188,13 @@ def post_batch_weight():
         jsonData = ast.literal_eval(jsonData)
         for obj in jsonData:
             item_id = obj['id']
-            weight = int(obj['weight'])
+            weight = str(obj['weight'])
             unit = obj['unit']
             mySQL_DAL.insert_tara_container(item_id, weight, unit)
         return 'Read file "/in/{}" and uploaded to database.'.format(filename)
     except Exception as e:
         logging.error("Error: %s" % e)
-        return str(e)
+        #return str(e)
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
@@ -210,8 +209,6 @@ def get_unknown_containers():
     except Exception as e:
         logging.error("Error: %s" % e)
         return str(e)
-
-
 
 @app.route('/aa', methods= ['GET'])
 def mm():
