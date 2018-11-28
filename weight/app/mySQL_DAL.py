@@ -14,13 +14,16 @@ databaseConfig = {
 }
 
 
-def insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_id, produce ):
+def insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_id, produce, force):
     # init connection to db
     cnx = mysql.connector.connect(**databaseConfig)
     cursor = cnx.cursor()
 
+    # TODO: check if force and handle appropriatley
+
     # Insert new weight
-    add_weight = ('INSERT INTO weighings (session_id, date_time, weight, unit, direction, truck_id, container_id, produce) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)')
+    add_weight = ('INSERT INTO weighings (session_id, datetime, weight, unit, direction, truck_id, container_id, produce) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)')
+    data_weight = (session_id, date_time, weight, unit, direction, truck_id, container_id, produce)
     cursor.execute(add_weight, data_weight)
     cnx.commit()
     logging.info('Saved weight for session=%s, date=%s, weight=%s, unit=%s, direction=%s, truck=%s,  container/s=%s, produce=%s' % (session_id, date_time, weight, unit, direction,  truck_id, container_id, produce))
@@ -29,7 +32,7 @@ def insert_weight(session_id, date_time, weight, unit, direction, truck_id, cont
     cursor.close()
     cnx.close()
 
-
+    return True  # On success
 
 def insert_tara_container(container_id, container_weight, unit):
     # init connection to db

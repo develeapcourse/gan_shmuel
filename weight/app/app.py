@@ -9,7 +9,6 @@ Weight Application
 # -*-coding:utf-8 -*
 from dotenv import load_dotenv
 from flask import Flask, request, json, jsonify
-from os.path import isdir, islink
 from pathlib import Path
 from typing import List, Dict
 import ast
@@ -18,6 +17,7 @@ import csv
 import datetime
 import logging
 import mysql.connector
+import os
 import uuid
 import json
 import datetime
@@ -39,6 +39,30 @@ config = {
 'port' : os.getenv('PORT'),
 'database' : os.getenv('DATABASE')
 }
+
+def get_new_unique_id(output_as = 'str'):
+   """
+   Returns a new unique id as a string, or (if passed argument 'int') as an integer.
+
+   """
+   unique_id = abs(hash(datetime.datetime.now()))
+   if output_as.lower() == 'int':
+       return unique_id
+   return str(unique_id)
+
+def swap_datetime_format(input_date):
+    """
+    Switches between input_date formats:
+     - String of 14 digits:   "20180720133702"
+     - Class datetime object: datetime.datetime(2018, 7, 20, 13, 37, 2, 409513)
+    """
+    if isinstance(input_date, datetime.datetime):
+        output_date = input_date.strftime('%Y%m%d%H%M%S')
+    elif isinstance(input_date, str) and len(input_date) == 14:
+        output_date = datetime.datetime.strptime(input_date, '%Y%m%d%H%M%S')
+    else:
+        logging.error('Illegal input passed to function format_datetime.')
+    return output_date
 
 def csv_to_json(csvFile):
     """
@@ -69,6 +93,7 @@ def post_weight():
       "neto": <int> or "na" // na if some of containers have unknown tara
     }
     """
+    # getting input
     direction = request.form['direction']
     truck_id = request.form['truck']
     container_ids = request.form['containers']
@@ -76,10 +101,40 @@ def post_weight():
     unit = request.form['unit']
     force = request.form['force']
     produce = request.form['produce']
-    # post values to db
 
-    # return json on success
-    pass  # temporary line, until function and return implemented
+    # reformatting input
+    direction = direction.lower().strip('"').strip('\'')
+    truck_id = truck_id.lower().strip('"').strip('\'')
+    container_ids = container_ids
+    unit = unit.lower().strip('"').strip('\'')
+    force = force.lower().strip('"').strip('\'')
+    produce = produce.lower().strip('"').strip('\'')
+    if force == "true":
+        force = True
+    elif force == "false":
+        force = False
+    else:
+        logging.error('Post weight function recieved illegal value for key `force`: "{}"'.format(force))
+
+    return container_ids
+    # set/get unique id
+    if direction == 'in' or direction == 'none':
+        session_id = get_new_unique_id()
+    elif direction == 'none':
+        pass
+        #lookup session id in database by most recent entry for truck_id with direction 'in'
+    else:
+        logging.error('Post weight function recieved illegal value for key `direction`: "{}"'.format(direction))
+
+    # set date_time
+    date_time = swap_datetime_format(datetime.datetime.now())
+
+    # post values to db
+    if mySQL_DAL.insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_ids, produce, force):
+        return 'success!'
+    else:
+        return 'something went wrong...'
+    return direction  + ' ' + truck_id  + ' ' + container_ids  + ' ' + weight  + ' ' + unit  + ' ' + str(force)  + ' ' + produce
 
 @app.route('/batch-weight', methods = ['POST'])
 def post_batch_weight():
@@ -194,7 +249,7 @@ def getSession(id):
             payload = []
             content = {}
             for result in rv:
-                if result[5] == 'in' or result[5] == 'out':
+                if result[5] == 'in' or result[5] == 'none':
                     content = {'id': result[1], 'truck': result[6], 'bruto': result[3]}
                     payload.append(content)
                     content = {}
@@ -259,7 +314,7 @@ def health():
     # test existence of /in dir
     try:
         path = '../in'
-        if isdir(path) and islink(path):
+        if os.isdir(path) and os.islink(path):
             pass
     except Exception as e:
         logging.error('`/in` Directory doesn\'t exist.')
