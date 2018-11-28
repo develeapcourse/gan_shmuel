@@ -19,4 +19,4 @@ COPY in/ /app
 COPY .env /app
 COPY app.py /app
 COPY mySQL_DAL.py /app
-CMD python3 app.py
+CMD python3 /app/app.py
