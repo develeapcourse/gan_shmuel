@@ -12,11 +12,11 @@ from flask import Flask, request, json, jsonify
 from pathlib import Path
 from typing import List, Dict
 import ast
-import mySQL_DAL
 import csv
 import datetime
 import logging
 import mysql.connector
+import mySQL_DAL
 import os
 import uuid
 import json
@@ -26,7 +26,7 @@ import os
 
 app = Flask(__name__)
 
-# Logging default level is WARNING (30), So switch to level DEBUG (10)
+# Configure logging
 logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
 # Setting .env path and loading its values
@@ -438,14 +438,14 @@ def getSession(id):
 @app.route('/health', methods = ['GET'])
 def health():
     """
-    health function tests various components of service, if all are well it will return ok.
+    Health function tests various components of service, if all are well it will return ok.
     """
-    # write to log
+    # Test write to log
     try:
         logging.info('Health check!')
     except Exception as e:
         return 'Error writing to log: %s' % e
-    # test db connection
+    # Test db connection
     try:
         cnx = mysql.connector.connect(**mySQL_DAL.databaseConfig)
         cnx.close()
@@ -453,11 +453,11 @@ def health():
         logging.error('Database Connection Failed with Error %s' % e)
         return 'Error connected to database: %s' % e
 
-    # test existence of /in dir
+    # Test existence of /in dir
     try:
-        path = '../in'
-        if os.path.isdir(path) and os.path.islink(path):
-            pass
+        path = '/in'
+        os.path.isdir(path)
+        os.path.islink(path)
     except Exception as e:
         logging.error('`/in` Directory doesn\'t exist.')
         return 'Error: %s' % e
