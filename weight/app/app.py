@@ -7,6 +7,7 @@ Weight Application
 """
 
 # -*-coding:utf-8 -*
+from dotenv import load_dotenv
 from flask import Flask, request, json, jsonify
 from pathlib import Path
 from time import gmtime, strftime
@@ -40,10 +41,10 @@ config = {
 }
 
 def get_new_unique_id(output_as = 'str'):
-   """
-   Returns a new unique id as a string, or (if passed argument 'int') as an integer.
+    """
+    Returns a new unique id as a string, or (if passed argument 'int') as an integer.
 
-   """
+    """
     try:
         unique_id = abs(hash(datetime.datetime.now()))
         if output_as.lower() == 'int':
@@ -142,7 +143,7 @@ def post_weight():
             force = False
         else:
             logging.error('Post weight function recieved illegal value for key `force`: "{}"'.format(force))
-            break
+            return 'something went wrong...'
 
         # set/get unique id
         if direction == 'in' or direction == 'none':
@@ -499,8 +500,8 @@ def health():
 
     # test existence of dotenv file
     try:
-        path = 'app/.env'
-        if os.isfile(path):
+        path = '/app/.env'
+        if os.path.isfile(path):
             pass
     except Exception as e:
         logging.error('`.env` File doesn\'t exist.')
