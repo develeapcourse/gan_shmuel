@@ -1,5 +1,5 @@
 """
-        mySQL - Data Access Layers, Weight-API for Database config & calls
+mySQL - Data Access Layers, Weight-API for Database config & calls
 """
 # -*-coding:utf-8 -*
 from dotenv import load_dotenv
@@ -22,6 +22,25 @@ databaseConfig = {
     'port': os.getenv('PORT', default = '3306'),
     'database': os.getenv('DATABASE', default = 'weight_system')
 }
+
+def dump_db(table):
+    """
+    Dumps all rows from `table` name.
+    """
+    # init connection to db
+    cnx = mysql.connector.connect(**databaseConfig)
+    cursor = cnx.cursor()
+
+    # querying db
+    query = ('SELECT * FROM {}'.format(table))
+    cursor.execute(query)
+    rv = cursor.fetchall()
+
+    # cleanup
+    cursor.close()
+    cnx.close()
+
+    return str(rv)
 
 def insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_id, produce, force):
     try:
@@ -53,8 +72,8 @@ def insert_tara_container(container_id, container_weight, unit):
         cursor = cnx.cursor()
 
         # Insert new weight
-        add_tara_container = ('INSERT INTO  tara_containers (container_id, container_weight, unit) VALUES (%s, %s, %s)')
-        values  = (container_id, container_weight, unit)
+        add_tara_container = ('INSERT INTO tara_containers (container_id, container_weight, unit) VALUES (%s, %s, %s)')
+        values = (container_id, str(container_weight), unit)
         cursor.execute(add_tara_container, values)
         cnx.commit()
         #logging.info('Save weight for container_id=%s, weight=%s, unit=%s, date=%s' % (container_id, weight, unit))
@@ -62,10 +81,10 @@ def insert_tara_container(container_id, container_weight, unit):
         # cleanup
         cursor.close()
         cnx.close()
+        return 'fa'
     except Exception as e:
-        logging.error("Error: DB Down")
+        logging.error("Error: Error occured in DAL or DB!")
         return str(e)
-
 
 def insert_tara_truck(truck_id, truck_weight, unit):
     try:
@@ -83,7 +102,7 @@ def insert_tara_truck(truck_id, truck_weight, unit):
         cursor.close()
         cnx.close()
     except Exception as e:
-        logging.error("Error: DB Down")
+        logging.error("Error: Error occured in DAL or DB!")
         return str(e)
 
 def get_unknown_weight_containers():
