@@ -13,7 +13,7 @@ INSERT into tara_trucks VALUES ("1",200,"kl");
 
 CREATE TABLE tara_containers (
         container_id VARCHAR(50) NOT NULL,
-        container_weight INT(5),
+        container_weight VARCHAR(5),
         unit VARCHAR(3) NOT NULL,
         PRIMARY KEY (container_id)
 );
@@ -24,7 +24,7 @@ CREATE TABLE weighings (
         id INT(11) NOT NULL AUTO_INCREMENT,
         session_id VARCHAR(50) NOT NULL,
         datetime BIGINT NOT NULL,
-        weight INT(5) NOT NULL,
+        weight VARCHAR(5) NOT NULL,
         unit VARCHAR(3) NOT NULL,
         direction VARCHAR(4) NOT NULL,
         truck_id VARCHAR(11) NOT NULL,
@@ -47,3 +47,4 @@ FOREIGN KEY (container_id)
 REFERENCES tara_containers (container_id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION;*/
+
