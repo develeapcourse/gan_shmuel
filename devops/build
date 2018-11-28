@@ -37,7 +37,7 @@ build_img_by_path $bills_path/app $image_tag
 
 docker-compose $docker_compose_destinations up -d
 
-pip3 install -U pytest
+pip install -U pytest
 
 python -m pytest $base_dir_path/$devops_path/test_sanity.py
 
