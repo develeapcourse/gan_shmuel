@@ -22,12 +22,26 @@ import uuid
 import json
 import datetime
 from time import gmtime, strftime
+import os
 
 # Logging default level is WARNING (30), So switch to level DEBUG (10)
 logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
 # make flask instance of our app
 app = Flask(__name__)
+
+
+# database connection configuration and credentials:
+databaseConfig = {
+    'user': os.getenv('USER', default = 'root'),
+    'password': os.getenv('PASSWORD', default = 'root'),
+    'host': os.getenv('HOST', default = 'service_db_weight'),
+    'port': os.getenv('PORT', default = '3306'),
+    'database': os.getenv('DATABASE', default = 'weight_system')
+}
+
+
+
 
 def csv_to_json(csvFile):
     """
@@ -120,7 +134,8 @@ def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
     # return array of json objects
 
 @app.route('/item/<string:item_id>', methods = ['GET'])
-def get_item(item_id):  # This doesn't belong in the function params: " item_id, t1=time.strftime('%Y%m%d%H%M%S',date(date.today().year, 1, 1)), t2=strftime('%Y%m%d%H%M%S', gmtime()) "
+def get_item(item_id):
+  # This doesn't belong in the function params: " item_id, t1=time.strftime('%Y%m%d%H%M%S',date(date.today().year, 1, 1)), t2=strftime('%Y%m%d%H%M%S', gmtime()) "
     """
     - id is for an item (truck or container). 404 will be returned if non-existent
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
@@ -132,52 +147,85 @@ def get_item(item_id):  # This doesn't belong in the function params: " item_id,
       "sessions": [ <id1>,...]
     }
     """   
-    
+
     t1 = request.args['from']
     t2 = request.args['to']
-    #return item_id
-    
-    data_tara_container = json.load(mySQL_DAL.get_tara_container(item_id))
-    return json.dumbs(data_tara_container)
+   
     """
-    #data_tara_truck = json.load(mySQL_DAL.get_tara_truck(item_id))
-    #data_weighings = json.load(mySQL_DAL.get_session_by_time(t1,t2))
-    #return data_tara_container
+    data_tara_container = json.load(mySQL_DAL.get_tara_container(item_id))
+    logging.info("data tara is: %s" % data_tara_container)
+    data_tara_truck = json.load(mySQL_DAL.get_tara_truck(item_id))
+    data_weighings = json.load(mySQL_DAL.get_session_by_time(t1,t2))
+    return data_tara_container
     """    
     sessions = []
-    help_data = []
     tara = ""
-   
-    try:
-        connection = mysql.connector.connect(**init_config)
-        cursor = connection.cursor()
-        cursor.execute('SELECT * FROM tara_tracks WHERE track_id=%s' % item_id)
-        help_data = cursor.fetchall()
-        if help_data == []:
-            cursor.close()
-            connection.close()
-            connection = mysql.connector.connect(**init_config)
-            cursor = connection.cursor()
+       
+    #========DAL to tara_container
+    cnx = mysql.connector.connect(**databaseConfig)
+    cursor = cnx.cursor()
+    #quering db
+    query = ("SELECT * FROM tara_containers WHERE container_id=%s" % item_id)
+    cursor.execute(query)
+    row_headers=[x[0] for x in cursor.description] #this will extract row headers
+    rv = cursor.fetchall()
+    item_data = []
+    for result in rv:
+        item_data.append(dict(zip(row_headers,result)))
+    logging.info('send specific container and data is: %s' % rv)
+    # cleanup
+    cursor.close()
+    cnx.close()
+    query=""
+    logging.info("item data is: %s and json dumps is: %s" % (item_data, json.dumps(item_data)))
+    if item_data == []:
+         #======DAL to tara_tracks - to check if item is from tracks table
+         cnx = mysql.connector.connect(**databaseConfig)
+         cursor = cnx.cursor()
+         #quering db
+         query = ("SELECT * FROM tara_tracks WHERE track_id=%s" % item_id)
+         cursor.execute(query)
+         row_headers=[x[0] for x in cursor.description] #this will extract row headers
+         rv = cursor.fetchall()
+         logging.info("data: %s" % rv)
+         item_data = []
+         for result in rv:
+                item_data.append(dict(zip(row_headers,result)))
+         # cleanup
+         cursor.close()
+         cnx.close()
+         query=""
+         logging.info("item data is: %s and json dumps is: %s" % (item_data, json.dumps(item_data)))
+         if item_data == []:
+             logging.error("404 non-existent item, item-id: %s" % item_id)
+             return "404 not found"
+         else:
+             #========DAL to weighings to check the sessions id's
+             query = ("SELECT * FROM weighings WHERE track_id=%s" % item_id)
+    else:  
+         #========DAL to weighings to check the sessions id's
+         query = ("SELECT * FROM weighings w WHERE FIND_IN_SET(%s, w.containers)" % item_id)
+    
+    if query != "":
+         #========DAL to weighings to check the sessions id's
+         cnx = mysql.connector.connect(**databaseConfig)
+         cursor = cnx.cursor()
+         #quering db
+         cursor.execute(query)
+         row_headers=[x[0] for x in cursor.description] #this will extract row headers
+         rv = cursor.fetchall()
+         session_data = []
+         for result in rv:
+              session_data.append(dict(zip(row_headers,result)))
+         logging.info('data is: %s' % rv)
+         # cleanup
+         cursor.close()
+         cnx.close()
 
-            logging.error("404 non-existent item, item-id: %s" % item_id)
-            return "404 not found"
-        else:
-            cursor.close()
-            connection.close()
-            connection = mysql.connector.connect(**init_config)
-            cursor = connection.cursor()
-            cursor.execute('SELECT * FROM weighings WHERE date BETWEEN %s and %s' % (t1,t2))
-            help_data = cursor.fetchall()
-            
 
-    except Exception as e:
-        logging.error('Request failed with error: %s' % e)
-        return 'Error: %s' % e
-    # return json
+         logging.info("instance found in tara container")
+         
     """
-     
-    sessions = []
-    tara = ""
     if data_tara_container == []:
         #if data_tara_track == []:
        
