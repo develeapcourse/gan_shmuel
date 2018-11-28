@@ -29,6 +29,16 @@ logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, form
 # make flask instance of our app
 app = Flask(__name__)
 
+def get_new_unique_id(output_as = 'str'):
+   """
+   Returns a new unique id as a string, or (if passed argument 'int') as an integer.
+
+   """
+   unique_id = abs(hash(datetime.datetime.now()))
+   if output_as.lower() == 'int':
+       return unique_id
+   return str(unique_id)
+
 def csv_to_json(csvFile):
     """
     takes an input CSV file and returns its JSON representation.
@@ -58,6 +68,7 @@ def post_weight():
       "neto": <int> or "na" // na if some of containers have unknown tara
     }
     """
+    # getting input
     direction = request.form['direction']
     truck_id = request.form['truck']
     container_ids = request.form['containers']
@@ -65,10 +76,35 @@ def post_weight():
     unit = request.form['unit']
     force = request.form['force']
     produce = request.form['produce']
-    # post values to db
 
-    # return json on success
-    pass  # temporary line, until function and return implemented
+    # reformatting input
+    direction = direction.lower().strip('"').strip('\'')
+    truck_id = truck_id.lower().strip('"').strip('\'')
+    container_ids = ast.literal_eval(container_ids)
+    unit = unit.lower().strip('"').strip('\'')
+    force = force.lower().strip('"').strip('\'')
+    produce = produce.lower().strip('"').strip('\'')
+    if force == "true":
+        force = True
+    elif force == "false":
+        force = False
+    else:
+        logging.error('Post weight function recieved illegal value for key `force`: "{}"'.format(force))
+
+    # set/get unique id
+    if direction == 'in' or direction == 'none':
+        session_id = get_new_unique_id()
+    elif direction == 'none':
+        pass
+        #lookup session id in database by most recent entry for truck_id with direction 'in'
+    else:
+        logging.error('Post weight function recieved illegal value for key `direction`: "{}"'.format(direction))
+
+    date_time = format_datetime(datetime.datetime.now())
+    # post values to db
+    mySQL_DAL.insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_id, produce, force)
+
+    return direction  + ' ' + truck_id  + ' ' + container_ids  + ' ' + weight  + ' ' + unit  + ' ' + str(force)  + ' ' + produce
 
 @app.route('/batch-weight', methods = ['POST'])
 def post_batch_weight():
