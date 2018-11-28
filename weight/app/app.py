@@ -133,7 +133,6 @@ def post_weight():
     # reformatting input
     direction = direction.lower().strip('"').strip('\'')
     truck_id = truck_id.lower().strip('"').strip('\'')
-    container_ids = container_ids
     unit = unit.lower().strip('"').strip('\'')
     force = force.lower().strip('"').strip('\'')
     produce = produce.lower().strip('"').strip('\'')
@@ -144,15 +143,15 @@ def post_weight():
     else:
         logging.error('Post weight function recieved illegal value for key `force`: "{}"'.format(force))
 
-    return container_ids
     # set/get unique id
     if direction == 'in' or direction == 'none':
         session_id = get_new_unique_id()
-    elif direction == 'none':
+    elif direction == 'out':
         pass
-        #lookup session id in database by most recent entry for truck_id with direction 'in'
+        session_id = mySQL_DAL.get_last_session_id_of_truck_entrance(truck_id)
     else:
         logging.error('Post weight function recieved illegal value for key `direction`: "{}"'.format(direction))
+    return session_id # DEBUG
 
     # set date_time
     date_time = swap_datetime_format(datetime.datetime.now())
@@ -224,11 +223,24 @@ def get_weighings_from_dt():
     directions = request.args.get("filter")
     if directions is None:
         directions = ['out']
+
     """
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
     - directions - comma delimited list of directions. default is "in,out,none"
     default t1 is "today at 000000". default t2 is "now".
-    returns an array of json objects, one per weighing (batch NOT included) """
+    returns an array of json objects, one per weighing (batch NOT included):
+    [{ "id": <id>,
+       "direction": in/out/none,
+       "bruto": <int>, //in kg
+       "neto": <int> or "na" // na if some of containers have unknown tara
+       "produce": <str>,
+       "containers": [ id1, id2, ...]
+    },...]
+    """
+    t1 = request.args.get("from")
+    t2 = request.args.get("to")
+    directions = request.args.get("filter")
+    x=int(t1)
     try:
         connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
         cursor = connection.cursor()
@@ -243,13 +255,6 @@ def get_weighings_from_dt():
         return str(results)
     except Exception as e:
         return str(e)
-
-
-    # t1 = request.args['from']
-    # t2 = request.args['to']
-    # filt = request.arg['filter']  # variable not named filter due to existing object in python.
-    # return str(t1)
-    # return array of json objects
 
 def create_query_list(items):
     res = "("
@@ -267,9 +272,9 @@ def append_item(item, res):
     res += "," + format_item(item)
 
 
+
 @app.route('/item/<string:item_id>', methods = ['GET'])
 def get_item(item_id):
-  # This doesn't belong in the function params: " item_id, t1=time.strftime('%Y%m%d%H%M%S',date(date.today().year, 1, 1)), t2=strftime('%Y%m%d%H%M%S', gmtime()) "
     """
     - id is for an item (truck or container). 404 will be returned if non-existent
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
@@ -362,7 +367,7 @@ def get_item(item_id):
     """
     if data_tara_container == []:
         #if data_tara_track == []:
-       
+
            # logging.error("404 non-existent item, item-id: %s" % item_id)
         else:
             tara = data_tara_track[0]['weight'] + data_tara_track[0]['unit']
@@ -384,7 +389,7 @@ def get_item(item_id):
     return json.dumps(json_data)
     """
 
-sessionInfos = []
+    sessionInfos = []
 
 
 @app.route('/session/<id>', methods = ['GET'])
@@ -458,18 +463,23 @@ def health():
     """
     health function tests various components of service, if all are well it will return ok.
     """
+    # write to log
+    try:
+        logging.info('Health check!')
+    except Exception as e:
+        return 'Error writing to log: %s' % e
     # test db connection
     try:
         cnx = mysql.connector.connect(**mySQL_DAL.databaseConfig)
         cnx.close()
     except Exception as e:
         logging.error('Database Connection Failed with Error %s' % e)
-        return 'Error: %s' % e
+        return 'Error connected to database: %s' % e
 
     # test existence of /in dir
     try:
         path = '../in'
-        if os.isdir(path) and os.islink(path):
+        if os.path.isdir(path) and os.path.islink(path):
             pass
     except Exception as e:
         logging.error('`/in` Directory doesn\'t exist.')
