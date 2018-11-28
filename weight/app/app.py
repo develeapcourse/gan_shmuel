@@ -13,29 +13,21 @@ from os.path import isdir, islink
 from pathlib import Path
 from typing import List, Dict
 import ast
-<<<<<<< HEAD
-=======
 import mySQL_DAL
->>>>>>> refs/remotes/origin/master
 import csv
 import datetime
 import logging
 import mysql.connector
 import uuid
-<<<<<<< HEAD
-
-app = Flask(__name__)
-
-=======
 import json
 import datetime
 from time import gmtime, strftime
->>>>>>> refs/remotes/origin/master
+
+app = Flask(__name__)
 
 # Logging default level is WARNING (30), So switch to level DEBUG (10)
 logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
-<<<<<<< HEAD
 # Setting .env path and loading its values
 load_dotenv(verbose=True)
 
@@ -48,11 +40,6 @@ config = {
 'database' : os.getenv('DATABASE')
 }
 
-=======
-# make flask instance of our app
-app = Flask(__name__)
-
->>>>>>> refs/remotes/origin/master
 def csv_to_json(csvFile):
     """
     takes an input CSV file and returns its JSON representation.
@@ -103,19 +90,14 @@ def post_batch_weight():
     filename = request.form['file']
 
     if filename.endswith('.csv'):
-<<<<<<< HEAD
         jsonData = csv_to_json(filename)
-=======
         jsonData = csv_to_json('/in/{}'.format(filename))  # returns weight as string instead of int
->>>>>>> refs/remotes/origin/master
     elif filename.endswith('.json'):
         with open('/in/{}'.format(filename), 'r') as f:
             jsonData = str(json.load(f))
     else:
         logging.error('File passed to /batch-weight/{} of invalid format.'.format(filename))
         return 'Error: illegal filetype.'
-<<<<<<< HEAD
-=======
 
     jsonData = ast.literal_eval(jsonData)
     for obj in jsonData:
@@ -124,7 +106,6 @@ def post_batch_weight():
         unit = obj['unit']
         mySQL_DAL.insert_tara_container(item_id, weight, unit)
     return 'Read file "/in/{}" and uploaded to database.'.format(filename)
->>>>>>> refs/remotes/origin/master
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
