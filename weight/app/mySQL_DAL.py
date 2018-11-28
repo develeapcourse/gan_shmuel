@@ -63,7 +63,7 @@ def insert_tara_container(container_id, container_weight, unit):
         cursor.close()
         cnx.close()
     except Exception as e:
-        logging.error("Error: DB Down")
+        logging.error("Error: %s" % e)
         return str(e)
 
 
@@ -83,46 +83,53 @@ def insert_tara_truck(truck_id, truck_weight, unit):
         cursor.close()
         cnx.close()
     except Exception as e:
-        logging.error("Error: DB Down")
+        logging.error("Error: %s" % e)
         return str(e)
 
 def get_unknown_weight_containers():
-    # init connection to db
-    cnx = mysql.connector.connect(**databaseConfig)
-    cursor = cnx.cursor()
+    try:
+        # init connection to db
+        cnx = mysql.connector.connect(**databaseConfig)
+        cursor = cnx.cursor()
 
-    # querying db
-    query = ('SELECT container_id FROM tara_containers WHERE container_weight IS NULL')
-    cursor.execute(query)
-    rv = cursor.fetchall()
-    logging.info('send containers that have unknown weight')
+        # querying db
+        query = ('SELECT container_id FROM tara_containers WHERE container_weight IS NULL')
+        cursor.execute(query)
+        rv = cursor.fetchall()
+        logging.info('send containers that have unknown weight')
 
-    # cleanup
-    cursor.close()
-    cnx.close()
-
-    return str(rv)
+        # cleanup
+        cursor.close()
+        cnx.close()
+        return str(rv)
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
 def get_session_by_time(fromTime, toTime):
-    # init connection to db
-    cnx = mysql.connector.connect(**databaseConfig)
-    cursor = cnx.cursor()
+    try:
+        # init connection to db
+        cnx = mysql.connector.connect(**databaseConfig)
+        cursor = cnx.cursor()
 
-    # querying db
-    query = ('SELECT * FROM weighings WHERE date_time BETWEEN %s and %s')
-    cursor.execute(query, (fromTime, toTime))
-    row_headers = [x[0] for x in cur.description]  # this will extract row headers
-    rv = cur.fetchall()
-    json_data = []
-    for result in rv:
-        json_data.append(dict(zip(row_headers,result)))
-    logging.info('send sessions list with details')
+        # querying db
+        query = ('SELECT * FROM weighings WHERE date_time BETWEEN %s and %s')
+        cursor.execute(query, (fromTime, toTime))
+        row_headers = [x[0] for x in cur.description]  # this will extract row headers
+        rv = cur.fetchall()
+        json_data = []
+        for result in rv:
+            json_data.append(dict(zip(row_headers,result)))
+        logging.info('send sessions list with details')
 
-    # cleanup
-    cursor.close()
-    cnx.close()
+        # cleanup
+        cursor.close()
+        cnx.close()
 
-    return json.dumps(json_data)
+        return json.dumps(json_data)
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
 def get_last_session_id_of_truck_entrance(truck_id):
     """

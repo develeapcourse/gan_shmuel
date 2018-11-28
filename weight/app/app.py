@@ -69,7 +69,7 @@ def csv_to_json(csvFile):
         with open(csvFile) as f:
             for row in csv.DictReader(f):
                 data.append(row)
-        json_data = json.dumps(data)
+        json_data = jsonify(data)
         return json_data
     except Exception as e:
         logging.error("Error: %s" % e)
@@ -453,7 +453,7 @@ def getSession(id):
             return jsonify(payload)     
         connection.close()
     except Exception as e:
-        logging.error("Error: DB Down")
+        logging.error("Error: %s" % e)
         return str(e)
   
 @app.route('/health', methods = ['GET'])
