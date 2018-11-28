@@ -44,6 +44,20 @@ def csv_to_json(csvFile):
 def index():
     return 'Weight application - please refer to spec. file for API instructions.'
 
+@app.route('/weightList')
+def providerList() -> List[Dict]:
+    try:
+     connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+     cursor = connection.cursor()
+     results = cursor.execute('SELECT * FROM weighings WHERE ')
+     cursor.close()
+     connection.close()
+     logging.info('Show all providers successfully completed')
+     return str(results)
+    except Exception as e:
+        logging.error("Failed to view all providers")
+        return str(e)
+
 @app.route('/weight', methods = ['POST'])
 def post_weight():
     """
@@ -104,18 +118,54 @@ def get_unknown_containers():
     unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
     return unknown_container_arr
 
-@app.route('/weight?from=<string:t1>&to=<string:t2>&filter=<string:filter>', methods = ['GET'])
-def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
+
+
+@app.route('/aa', methods= ['GET'])
+def mm():
+    try:
+     connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+     cursor = connection.cursor()
+     cursor.execute('SELECT * FROM weighings')
+     results = cursor.fetchall()
+     cursor.close()
+     connection.close()
+     logging.info('Show all providers successfully completed')
+     return str(results)
+    except Exception as e:
+        logging.error("Failed to view all providers")
+        return str(e)
+
+@app.route('/weight', methods = ['GET'])
+def get_weighings_from_dt():
+    t1 = request.args.get("from")
+    t2 = request.args.get("to")
+    directions = request.args.get("filter")
+    x=int(t1)
     """
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
     - directions - comma delimited list of directions. default is "in,out,none"
     default t1 is "today at 000000". default t2 is "now".
-    returns an array of json objects, one per weighing (batch NOT included)
-    """
+    returns an array of json objects, one per weighing (batch NOT included) """
+    try:
+        connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+        cursor = connection.cursor()
+        #cursor.execute('SELECT * FROM weighings WHERE direction = "%s"'% directions)
+        cursor.execute('SELECT * , (weighings.weight - tara_containers.container_weight - tara_trucks.truck_weight) as neto  FROM weighings '
+                       'LEFT JOIN tara_containers ON tara_containers.container_id = weighings.containers_id '
+                       'LEFT JOIN tara_trucks ON tara_trucks.truck_id = weighings.truck_id '
+                       'WHERE  datetime BETWEEN "%d" AND "%d"AND direction in ("%s")'%(int(t1), int(t2), directions))
+        results = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return str(results)
+    except Exception as e:
+        return str(e)
+
+
     t1 = request.args['from']
     t2 = request.args['to']
     filt = request.arg['filter']  # variable not named filter due to existing object in python.
-    
+    return str(t1)
     # return array of json objects
 
 @app.route('/item/<string:item_id>', methods = ['GET'])
@@ -218,3 +268,5 @@ def health():
 if __name__ == '__main__':
     logging.info('Starting Flask server...')
     app.run(host='0.0.0.0', debug=True, port=5000)
+
+
