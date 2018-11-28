@@ -23,11 +23,22 @@ import json
 import datetime
 from time import gmtime, strftime
 
+app = Flask(__name__)
+
 # Logging default level is WARNING (30), So switch to level DEBUG (10)
 logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
-# make flask instance of our app
-app = Flask(__name__)
+# Setting .env path and loading its values
+load_dotenv(verbose=True)
+
+# configures and initializes MySQL database.
+config = {
+'user' : os.getenv('USER'),
+'password' : os.getenv('PASSWORD'),
+'host' : os.getenv('HOST'),
+'port' : os.getenv('PORT'),
+'database' : os.getenv('DATABASE')
+}
 
 def csv_to_json(csvFile):
     """
@@ -79,6 +90,7 @@ def post_batch_weight():
     filename = request.form['file']
 
     if filename.endswith('.csv'):
+        jsonData = csv_to_json(filename)
         jsonData = csv_to_json('/in/{}'.format(filename))  # returns weight as string instead of int
     elif filename.endswith('.json'):
         with open('/in/{}'.format(filename), 'r') as f:
@@ -166,32 +178,71 @@ def get_item(item_id):  # This doesn't belong in the function params: " item_id,
 
     return json.dumps(json_data)
 
-@app.route('/session/<string:session_id>', methods = ['GET'])
-def get_session(session_id):
-    """
-    session_id is for a weighing session. 404 will be returned if non-existent.
-    Returns a json:
-    {
-      "id": <str>,
-      "truck": <truck-id> or "na",
-      "bruto": <int>,
-      //ONLY for OUT:
-      "truckTara": <int>,
-      "neto": <int> or "na" // na if some of containers unknown
-    }
-    """
-    sessionInfos = []
+@app.route('/session/<id>', methods = ['GET'])
+def getSession(id):
     try:
-        connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+        connection = mysql.connector.connect(**config)
         cursor = connection.cursor()
-        cursor.execute('SELECT * FROM weighings WHERE session_id=%s' % session_id)
-        sessionInfos=cursor.fetchall()
-        print("coucou")
+        cursor.execute('SELECT * FROM weighings WHERE session_id=%s' % id)
+        rv = cursor.fetchall()
+        cursor.close()
+        logging.info("fetched session info")
+        if str(len(rv)) == "0":
+            logging.warning("Session is Empty")
+            return 'Session is Empty'
+        else:
+            payload = []
+            content = {}
+            for result in rv:
+                if result[5] == 'in' or result[5] == 'out':
+                    content = {'id': result[1], 'truck': result[6], 'bruto': result[3]}
+                    payload.append(content)
+                    content = {}
+                elif result[5] == 'out':
+                    cursor = connection.cursor()
+                    cursor.execute('SELECT truck_weight FROM tara_trucks WHERE truck_id="%s"' % result[6])
+                    taratruck = cursor.fetchone()
+                    cursor.close()
+                    containerslist = ast.literal_eval(result[7])
+                    na_counter = 0
+                    sum_containers = 0
+                    for container in containerslist:
+                        container = str(container)
+                        cursor = connection.cursor()
+                        cursor.execute('SELECT container_weight FROM tara_containers WHERE container_id="111"')#%s" % container
+                        container = cursor.fetchone() 
+                        cursor.close()
+                        if str(container) == 'None':
+                            logging.error("Container Not Found")
+                            na_counter += 1
+                            break
+                        elif str(container[0]) == 'na':
+                            logging.error("Container Found but has No Weight")
+                            na_counter += 1
+                            break
+                        else:
+                            sum_containers += int(container[0]) 
+                    if na_counter == 1:   
+                        content = {'id': result[1], 'truck': result[6], 'bruto': result[3], 'truckTara': str(taratruck[0]), 'neto': 'na'}
+                        payload.append(content)
+                        content = {}
+                    elif na_counter == 0:
+                        neto = int(result[3]) - (int(taratruck[0]) + sum_containers)
+                        content = {'id': result[1], 'truck': result[6], 'bruto': result[3], 'truckTara': str(taratruck[0]), 'neto': str(neto)}
+                        payload.append(content)
+                        content = {}
+                    else:
+                        logging.error("BUG found in containers_weight")
+                        return "Error Found in Container Weighting"
+                else:
+                    logging.error("Session Does not Exist")
+                    return 'Session Not Found'
+            return jsonify(payload)     
+        connection.close()
     except Exception as e:
-        logging.error('Request failed with error: %s' % e)
-        return 'Error: %s' % e
-    # return json
-
+        logging.error("Error: DB Down")
+        return str(e)
+  
 @app.route('/health', methods = ['GET'])
 def health():
     """
@@ -202,7 +253,7 @@ def health():
         cnx = mysql.connector.connect(**mySQL_DAL.databaseConfig)
         cnx.close()
     except Exception as e:
-        logging.error('Database connection failed with error %s' % e)
+        logging.error('Database Connection Failed with Error %s' % e)
         return 'Error: %s' % e
 
     # test existence of /in dir
@@ -211,7 +262,7 @@ def health():
         if isdir(path) and islink(path):
             pass
     except Exception as e:
-        logging.error('`/in` directory doesn\'t exist.')
+        logging.error('`/in` Directory doesn\'t exist.')
         return 'Error: %s' % e
 
     return 'ok'
