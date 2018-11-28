@@ -10,23 +10,32 @@ Weight Application
 from dotenv import load_dotenv
 from flask import Flask, request, json, jsonify
 from os.path import isdir, islink
-import mySQL_DAL
 from pathlib import Path
 from typing import List, Dict
 import ast
+<<<<<<< HEAD
+=======
+import mySQL_DAL
+>>>>>>> refs/remotes/origin/master
 import csv
 import datetime
 import logging
 import mysql.connector
-import os
 import uuid
+<<<<<<< HEAD
 
 app = Flask(__name__)
 
+=======
+import json
+import datetime
+from time import gmtime, strftime
+>>>>>>> refs/remotes/origin/master
 
 # Logging default level is WARNING (30), So switch to level DEBUG (10)
-logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
+<<<<<<< HEAD
 # Setting .env path and loading its values
 load_dotenv(verbose=True)
 
@@ -39,6 +48,11 @@ config = {
 'database' : os.getenv('DATABASE')
 }
 
+=======
+# make flask instance of our app
+app = Flask(__name__)
+
+>>>>>>> refs/remotes/origin/master
 def csv_to_json(csvFile):
     """
     takes an input CSV file and returns its JSON representation.
@@ -51,7 +65,7 @@ def csv_to_json(csvFile):
     return json_data
 
 @app.route('/')
-def index() -> str:
+def index():
     return 'Weight application - please refer to spec. file for API instructions.'
 
 @app.route('/weight', methods = ['POST'])
@@ -89,12 +103,28 @@ def post_batch_weight():
     filename = request.form['file']
 
     if filename.endswith('.csv'):
+<<<<<<< HEAD
         jsonData = csv_to_json(filename)
+=======
+        jsonData = csv_to_json('/in/{}'.format(filename))  # returns weight as string instead of int
+>>>>>>> refs/remotes/origin/master
     elif filename.endswith('.json'):
         with open('/in/{}'.format(filename), 'r') as f:
-            jsonData = f.readlines()
+            jsonData = str(json.load(f))
     else:
+        logging.error('File passed to /batch-weight/{} of invalid format.'.format(filename))
         return 'Error: illegal filetype.'
+<<<<<<< HEAD
+=======
+
+    jsonData = ast.literal_eval(jsonData)
+    for obj in jsonData:
+        item_id = obj['id']
+        weight = int(obj['weight'])
+        unit = obj['unit']
+        mySQL_DAL.insert_tara_container(item_id, weight, unit)
+    return 'Read file "/in/{}" and uploaded to database.'.format(filename)
+>>>>>>> refs/remotes/origin/master
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
@@ -102,9 +132,9 @@ def get_unknown_containers():
     Returns a list of all recorded containers that have unknown weight:
     ["id1","id2",...]
     """
-    logging.info('Retrieving from database: IDs for containers with unknown weight.')
     unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
-    return unknown_container_arr
+    unknown_container_arr = [packed_container_id[0] for packed_container_id in ast.literal_eval(unknown_container_arr)]
+    return str(unknown_container_arr)
 
 @app.route('/weight?from=<string:t1>&to=<string:t2>&filter=<string:filter>', methods = ['GET'])
 def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
@@ -120,8 +150,8 @@ def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
     
     # return array of json objects
 
-@app.route('/item/<string:id>?from=<string:t1>&to=<string:t2>', methods = ['GET'])
-def get_item(item_id, t1, t2):
+@app.route('/item/<string:item_id>', methods = ['GET'])
+def get_item(item_id):  # This doesn't belong in the function params: " item_id, t1=time.strftime('%Y%m%d%H%M%S',date(date.today().year, 1, 1)), t2=strftime('%Y%m%d%H%M%S', gmtime()) "
     """
     - id is for an item (truck or container). 404 will be returned if non-existent
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
@@ -133,11 +163,39 @@ def get_item(item_id, t1, t2):
       "sessions": [ <id1>,...]
     }
     """
-    item_id = request.args['id']
+
     t1 = request.args['from']
     t2 = request.args['to']
-    
-    # return json
+
+    data_tara_container = json.load(get_tara_container(item_id))
+    data_tara_truck = json.load(get_tara_truck(item_id))
+    data_weighings = json.load(get_session_by_time(t1,t2))
+
+    return_data = {}
+    sessions = []
+    tara = ""
+    if data_tara_container == []:
+        if data_tara_track == []:
+            return("404 not-found")
+            logging.error("404 non-existent item, item-id: %s" % item_id)
+        else:
+            tara = data_tara_track[0]['weight'] + data_tara_track[0]['unit']
+            for k,v in data_weighings.items():
+                if v['track_id'] == item_id and v['date'] >= t1 and v['date'] <= t2:
+                    sessions.append(v['session_id'])
+    else:
+          tara= data_tara_track[0]['weight'] + data_tara_track[0]['unit']
+          for k,v in data_weighings:
+              if v['date'] >= t1 and v['date'] <= t2:
+                   for con in v['container_id']:
+                       if con == item_id:
+                           sessions.append(v['session_id'])
+    data['id'] = item_id
+    data['tara'] = tara
+    data['sessions'] = sessions 
+    json_data = json.dumps(return_data)
+
+    return json.dumps(json_data)
 
 @app.route('/session/<id>', methods = ['GET'])
 def getSession(id):
@@ -211,11 +269,8 @@ def health():
     """
     # test db connection
     try:
-        connection = mysql.connector.connect(**config)
-        cursor = connection.cursor()
-        cursor.close()
-        connection.close()
-        logging.info('Database Connection Success!')
+        cnx = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+        cnx.close()
     except Exception as e:
         logging.error('Database Connection Failed with Error %s' % e)
         return 'Error: %s' % e

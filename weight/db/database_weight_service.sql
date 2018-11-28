@@ -29,4 +29,15 @@ CREATE TABLE weighings (
         PRIMARY KEY (id)
 );
 
+/*ALTER TABLE weighings ADD CONSTRAINT tara_trucks_weighings_fk
+FOREIGN KEY (truck_id)
+REFERENCES tara_trucks (truck_id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION;
+
+ALTER TABLE weighings ADD CONSTRAINT tara_containers_weighings_fk
+FOREIGN KEY (container_id)
+REFERENCES tara_containers (container_id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION;*/
 
