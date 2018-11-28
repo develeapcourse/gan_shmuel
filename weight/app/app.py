@@ -10,37 +10,24 @@ Weight Application
 from dotenv import load_dotenv
 from flask import Flask, request, json, jsonify
 from os.path import isdir, islink
-import mySQL_DAL
 from pathlib import Path
 from typing import List, Dict
+import ast
+import mySQL_DAL
 import csv
 import datetime
 import logging
 import mysql.connector
-import os
 import uuid
 import json
 import datetime
 from time import gmtime, strftime
 
-# Setting .env path and loading its values
-#env_path = Path('.') / '.env'
-#load_dotenv(dotenv_path=env_path, verbose=True, override=True)
-
 # Logging default level is WARNING (30), So switch to level DEBUG (10)
-logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
+# make flask instance of our app
 app = Flask(__name__)
-
-def init_config() -> List[Dict]:
-    # configures and initializes MySQL database.
-    config = {
-    'user' : os.getenv('USER'),
-    'password' : os.getenv('PASSWORD'),
-    'host' : os.getenv('HOST'),
-    'port' : os.getenv('PORT'),
-    'database' : os.getenv('DATABASE')
-    }
 
 def csv_to_json(csvFile):
     """
@@ -54,7 +41,7 @@ def csv_to_json(csvFile):
     return json_data
 
 @app.route('/')
-def index() -> str:
+def index():
     return 'Weight application - please refer to spec. file for API instructions.'
 
 @app.route('/weight', methods = ['POST'])
@@ -92,16 +79,21 @@ def post_batch_weight():
     filename = request.form['file']
 
     if filename.endswith('.csv'):
-        jsonData = csv_to_json('/in/{}'.format(filename))
-        return jsonData
+        jsonData = csv_to_json('/in/{}'.format(filename))  # returns weight as string instead of int
     elif filename.endswith('.json'):
         with open('/in/{}'.format(filename), 'r') as f:
             jsonData = str(json.load(f))
-            return jsonData
     else:
+        logging.error('File passed to /batch-weight/{} of invalid format.'.format(filename))
         return 'Error: illegal filetype.'
 
-    return 'recieved filename {}'.format(filename)
+    jsonData = ast.literal_eval(jsonData)
+    for obj in jsonData:
+        item_id = obj['id']
+        weight = int(obj['weight'])
+        unit = obj['unit']
+        mySQL_DAL.insert_tara_container(item_id, weight, unit)
+    return 'Read file "/in/{}" and uploaded to database.'.format(filename)
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
@@ -109,9 +101,9 @@ def get_unknown_containers():
     Returns a list of all recorded containers that have unknown weight:
     ["id1","id2",...]
     """
-    logging.info('Retrieving from database: IDs for containers with unknown weight.')
     unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
-    return unknown_container_arr
+    unknown_container_arr = [packed_container_id[0] for packed_container_id in ast.literal_eval(unknown_container_arr)]
+    return str(unknown_container_arr)
 
 @app.route('/weight?from=<string:t1>&to=<string:t2>&filter=<string:filter>', methods = ['GET'])
 def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
@@ -223,11 +215,10 @@ def get_session(session_id):
       "neto": <int> or "na" // na if some of containers unknown
     }
     """
-    session_id = request.args['session_id']
     sessionInfos = []
     try:
-        connection = mysql.connector.connect(**init_config)
-        cursor = connection.cursor()  
+        connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+        cursor = connection.cursor()
         cursor.execute('SELECT * FROM weighings WHERE session_id=%s' % session_id)
         sessionInfos=cursor.fetchall()
         print("coucou")
@@ -243,8 +234,8 @@ def health():
     """
     # test db connection
     try:
-        connection = mysql.connector.connect(**init_config)
-        connection.close()
+        cnx = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+        cnx.close()
     except Exception as e:
         logging.error('Database connection failed with error %s' % e)
         return 'Error: %s' % e

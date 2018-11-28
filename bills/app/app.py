@@ -3,9 +3,11 @@ from flask import Flask, request, send_from_directory
 import mysql.connector
 import openpyxl as xl
 import json
+import requests
 import logging
 
-app = Flask(__name__, static_url_path='')
+from datetime import datetime
+app = Flask(__name__, static_url_path='/')
 
 
 logging.basicConfig(filename = 'test.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
@@ -30,14 +32,14 @@ def truckInsert():
           connection.commit()
           cursor.close()
           connection.close()
-          return ('A  %d truck was added successfully'%(int(request.form["truckId"])))
+          return str('A  %d truck was added successfully'%(int(request.form["truckId"])))
        else:
          logging.error("This provider does not exist in the system")
          return ("This %d provider does not exist in the system"%(int(request.form["providerId"])))
     except Exception as e:
         logging.error("Failed to add %d provider"%(int(request.form["truckId"])))
-        return e
-
+        return str(e)
+ 
 @app.route('/provider', methods=["POST"])
 def providerInsert():
        logging.info('Add new provider to the table')
@@ -67,7 +69,7 @@ def listTruck() -> List[Dict]:
      return str(results)
     except Exception as e:
         logging.error("Failed to view all trucks")
-        return e
+        return str(e)
 
 @app.route('/rates')
 def getRates():
@@ -92,7 +94,8 @@ def providerList() -> List[Dict]:
      return str(results)
     except Exception as e:
         logging.error("Failed to view all providers")
-        return e
+        return str(e)
+
 
 @app.route('/provider/<id>', methods=["POST"])
 def providerUpdate(id):
@@ -107,23 +110,61 @@ def providerUpdate(id):
         return "ok"
     except Exception as e:
         logging.error("Failed to update %s provider"%id)
-        return(e)
+        return str(e)
+    
+
+@app.route('/truck/<id>', methods=["GET"])
+def get_truck(id):
+
+    date_from = request.args.get("from")
+    date_to = request.args.get("to")
+
+    if id is None:
+        logging.info("No truck id")
+        return "No truck id"
+    elif date_from is None:
+        # By default the date_from is from the first day of the current month
+        date_from = datetime.now().strftime('%Y%m01000000')
+    elif re.match("^[0-9]{14}$", date_from) is None:
+        logging.error("The format of date from {0} is not correct".format(date_from))
+        return str ("The format of date from {0} is not correct".format(date_from))
+
+    # Checking the dateTo format
+    if date_to is None:
+        # By default the date_to is now
+        date_to = datetime.now().strftime('%Y%m%d%H%M%S')
+    elif re.match("^[0-9]{14}$", date_to) is None:
+        logging.error("The format of date to {0} is not correct".format(date_to))
+        return str("The format of date to {0} is not correct".format(date_to))
+
+    try:
+        response = requests.get('http://service_app_weight:5000/item/{0}?from={1}&to={2}'.format(id,date_from,date_to))
+
+        if response.status_code == 404:
+            logging.error("Truck not found")
+            return "Truck not found"
+
+        logging.info("successfully get truck id={0} from={1} to={2}".format(id,date_from,date_to))
+        return response.json()
+    except Exception as error:
+        logging.error("get_truck: {0}".format( error))
+        return str("get_truck: {0}".format( error))
 
 
 @app.route('/truckList')
 def truckList():
     try:
-     connection = mysql.connector.connect(**databaseConfig)
-     cursor = connection.cursor()
-     cursor.execute('SELECT * FROM truck')
-     results = [{truckId: providerId} for (truckId, providerId) in cursor]
-     cursor.close()
-     connection.close()
-     logging.info('Show all trucks successfully completed')
-     return str(results)
+        connection = mysql.connector.connect(**databaseConfig)
+        cursor = connection.cursor()
+        cursor.execute('SELECT * FROM truck')
+        results = [{truckId: providerId} for (truckId, providerId) in cursor]
+        cursor.close()
+        connection.close()
+        logging.info('Show all trucks successfully completed')
+        return str(results)
     except Exception as e:
         logging.error("Failed to view all trucks")
-        return e
+        return str(e)
 
     
 @app.route('/truck/<id>', methods=["POST"])
@@ -139,7 +180,7 @@ def truckUpdate(id):
         return "ok"
     except Exception as e:
         logging.error("Failed to update %s provider"%id)
-        return(str(e))
+        return str(e)
     
 
 @app.route("/rates",methods=["POST"])
@@ -147,7 +188,7 @@ def postrates():
     filename = request.args.get("file")
 
     try:
-        wb = xl.load_workbook("in/" + filename )
+        wb = xl.load_workbook("/in/" + filename )
         ws = wb.get_active_sheet()
         connection = mysql.connector.connect(**databaseConfig)
         cursor = connection.cursor()
