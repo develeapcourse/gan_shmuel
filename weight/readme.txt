@@ -11,10 +11,10 @@
 			/_/   \_\_|   |_|   |_____|___\____/_/   \_\_| |___\___/|_| \_|
 
 
-						------------------
+					------------------
 	The industrial weight is in charge of weighing trucks, allowing payment to providers.
-  	The WeightApp tracks all weights and allows payment to be for net weight.
-  	Reminder: Bruto = Neto (fruit) + Tara (truck) + sum(Tara(Containers))
+  	     The WeightApp tracks all weights and allows payment to be for net weight.
+  	       Reminder: Bruto = Neto (fruit) + Tara (truck) + sum(Tara(Containers))
 
 						                                       
 

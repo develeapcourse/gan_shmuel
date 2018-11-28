@@ -194,7 +194,7 @@ def getSession(id):
             payload = []
             content = {}
             for result in rv:
-                if result[5] == 'in' or result[5] == 'out':
+                if result[5] == 'in' or result[5] == 'none':
                     content = {'id': result[1], 'truck': result[6], 'bruto': result[3]}
                     payload.append(content)
                     content = {}
