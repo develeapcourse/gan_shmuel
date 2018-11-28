@@ -24,6 +24,8 @@ import datetime
 
 app = Flask(__name__)
 
+# Logging default level is WARNING (30), So switch to level DEBUG (10)
+logging.basicConfig(filename = 'weight_service_app.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
 def get_new_unique_id(output_as = 'str'):
    """

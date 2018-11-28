@@ -9,7 +9,7 @@ import mysql.connector
 import os
 
 # Logging default level is WARNING (30), So switch to level DEBUG (10)
-logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+logging.basicConfig(filename = 'weight_service_mysql.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
 # Setting .env path and loading its values
 load_dotenv(verbose=True)
