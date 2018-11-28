@@ -9,10 +9,10 @@ if (( $# > 1 )); then
     base_dir_path=$2
 fi
 
-weight_path=$base_dir_path"/weight"
-bills_path=$base_dir_path"/bills"
-devops_path=$base_dir_path"/devops"
-docker_compose_destinations='-f '$bills_path'/docker-compose.yml -f '$weight_path'/docker-compose.yml -f '$devops_path'/docker-compose.override.yml'
+weight_path="weight"
+bills_path="bills"
+devops_path="devops"
+docker_compose_destinations='-f '$base_dir_path'/'$bills_path'/docker-compose.yml -f '$base_dir_path'/'$weight_path'/docker-compose.yml -f '$base_dir_path'/'$devops_path'/docker-compose.override.yml'
 
 image_tag="latest"
 if [ $# -ne 0 ]; then
@@ -23,10 +23,8 @@ build_img_by_path ()
 {
     path=$1
     tag=$2
-    
-    echo $path ' ' $tag
 
-    docker build -f $path/Dockerfile --tag $tag $path
+    docker build -f $base_dir_path/$path/Dockerfile --tag $path:$tag $base_dir_path/$path
 
     return $?
 }
@@ -40,6 +38,6 @@ docker-compose $docker_compose_destinations up -d
 
 pip install -U pytest
 
-pytest $devops_path/sanity.py
+python -m pytest $base_dir_path/$devops_path/test_sanity.py
 
 docker-compose $docker_compose_destinations down
