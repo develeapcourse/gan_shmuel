@@ -38,6 +38,6 @@ docker-compose $docker_compose_destinations up -d
 
 pip install -U pytest
 
-pytest $devops_path/sanity.py
+python -m pytest $devops_path/test_sanity.py
 
 docker-compose $docker_compose_destinations down
