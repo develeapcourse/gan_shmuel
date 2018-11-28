@@ -127,8 +127,8 @@ def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
     
     # return array of json objects
 
-@app.route('/item/<string:id>?from=<string:t1>&to=<string:t2>', methods = ['GET'])
-def get_item():  # This doesn't belong in the function params: " item_id, t1=time.strftime('%Y%m%d%H%M%S',date(date.today().year, 1, 1)), t2=strftime('%Y%m%d%H%M%S', gmtime()) "
+@app.route('/item/<string:item_id>', methods = ['GET'])
+def get_item(item_id):  # This doesn't belong in the function params: " item_id, t1=time.strftime('%Y%m%d%H%M%S',date(date.today().year, 1, 1)), t2=strftime('%Y%m%d%H%M%S', gmtime()) "
     """
     - id is for an item (truck or container). 404 will be returned if non-existent
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
@@ -139,23 +139,57 @@ def get_item():  # This doesn't belong in the function params: " item_id, t1=tim
       "tara": <int> OR "na", // for a truck this is the "last known tara"
       "sessions": [ <id1>,...]
     }
-    """
-
-    item_id = request.args['id']
+    """   
+    
     t1 = request.args['from']
     t2 = request.args['to']
+    #return item_id
+    
+    data_tara_container = json.load(mySQL_DAL.get_tara_container(item_id))
+    return json.dumbs(data_tara_container)
+    """
+    #data_tara_truck = json.load(mySQL_DAL.get_tara_truck(item_id))
+    #data_weighings = json.load(mySQL_DAL.get_session_by_time(t1,t2))
+    #return data_tara_container
+    """    
+    sessions = []
+    help_data = []
+    tara = ""
+   
+    try:
+        connection = mysql.connector.connect(**init_config)
+        cursor = connection.cursor()
+        cursor.execute('SELECT * FROM tara_tracks WHERE track_id=%s' % item_id)
+        help_data = cursor.fetchall()
+        if help_data == []:
+            cursor.close()
+            connection.close()
+            connection = mysql.connector.connect(**init_config)
+            cursor = connection.cursor()
 
-    data_tara_container = json.load(get_tara_container(item_id))
-    data_tara_truck = json.load(get_tara_truck(item_id))
-    data_weighings = json.load(get_session_by_time(t1,t2))
+            logging.error("404 non-existent item, item-id: %s" % item_id)
+            return "404 not found"
+        else:
+            cursor.close()
+            connection.close()
+            connection = mysql.connector.connect(**init_config)
+            cursor = connection.cursor()
+            cursor.execute('SELECT * FROM weighings WHERE date BETWEEN %s and %s' % (t1,t2))
+            help_data = cursor.fetchall()
+            
 
-    return_data = {}
+    except Exception as e:
+        logging.error('Request failed with error: %s' % e)
+        return 'Error: %s' % e
+    # return json
+    """
+     
     sessions = []
     tara = ""
     if data_tara_container == []:
-        if data_tara_track == []:
-            return("404 not-found")
-            logging.error("404 non-existent item, item-id: %s" % item_id)
+        #if data_tara_track == []:
+       
+           # logging.error("404 non-existent item, item-id: %s" % item_id)
         else:
             tara = data_tara_track[0]['weight'] + data_tara_track[0]['unit']
             for k,v in data_weighings.items():
@@ -174,7 +208,7 @@ def get_item():  # This doesn't belong in the function params: " item_id, t1=tim
     json_data = json.dumps(return_data)
 
     return json.dumps(json_data)
-
+    """
 @app.route('/session/<string:session_id>', methods = ['GET'])
 def get_session(session_id):
     """

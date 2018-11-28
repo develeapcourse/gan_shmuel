@@ -135,10 +135,8 @@ def get_tara_container(containerId):
     cnx = mysql.connector.connect(user='root', database='weight_system')
     cursor = cnx.cursor()
 
-    query = ("SELECT * "
-             "FROM tara_containers "
-             "WHERE container_id=%s")
-    cursor.execute(query, (containerId))
+    query = ("SELECT * FROM tara_containers WHERE container_id=%s" % containerId)
+    cursor.execute(query)
     row_headers=[x[0] for x in cur.description] #this will extract row headers
     rv = cur.fetchall()
     json_data=[]
@@ -154,10 +152,8 @@ def get_tara_truck(truck_id):
     cnx = mysql.connector.connect(user='root', database='weight_system')
     cursor = cnx.cursor()
 
-    query = ("SELECT * "
-             "FROM weighings "
-             "WHERE truck_id=%s")
-    cursor.execute(query, (truck_id))
+    query = ("SELECT * FROM weighings WHERE truck_id=%s" % track_id)
+    cursor.execute(query)
     row_headers=[x[0] for x in cur.description] #this will extract row headers
     rv = cur.fetchall()
     json_data=[]
