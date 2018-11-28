@@ -37,23 +37,21 @@ def insert_weight(session_id, date_time, weight, unit, direction, truck_id, cont
 
 
 def insert_tara_container(container_id, container_weight, unit):
+    # init connection to db
     cnx = mysql.connector.connect(**databaseConfig)
     cursor = cnx.cursor()
 
-    add_tara_container = ("INSERT INTO tara_containers "
-                          "(container_id, container_weight, unit) "
-                          "VALUES (%s, %s, %s)")
-
     # Insert new weight
-    data_container = (container_id, container_weight, unit)
-    cursor.execute(add_tara_container, data_container)
-
-    # Make sure data is committed to the database
+    add_tara_container = ('INSERT INTO  tara_containers (container_id, container_weight, unit) VALUES (%s, %s, %s)')
+    values  = (container_id, container_weight, unit)
+    cursor.execute(add_tara_container, values)
     cnx.commit()
+    #logging.info("Save weight for container_id=%s, weight=%s, unit=%s, date=%s" % (container_id, weight, unit))
 
+    # cleanup
     cursor.close()
     cnx.close()
-    #logging.info("Save weight for container_id=%s, weight=%s, unit=%s, date=%s" % (container_id, weight, unit, date))
+
 
 def insert_tara_truck(truck_id, truck_weight, unit):
 
@@ -78,17 +76,10 @@ def get_unknown_weight_containers():
     cnx = mysql.connector.connect(**databaseConfig)
     cursor = cnx.cursor()
 
-    query = ("SELECT container_id FROM tara_containers "
-             "WHERE weight==NULL")
+    query = ('SELECT container_id FROM tara_containers WHERE container_weight IS NULL')
     cursor.execute(query)
-    rv = cur.fetchall()
-    payload = []
-    content = {}
-    for result in rv:
-        content = {result[0]}
-    payload.append(content)
-    content = {}
-
+    rv = cursor.fetchall()
+    return str(rv)
     cursor.close()
     cnx.close()
     logging.info("send containers that have unknown weight")

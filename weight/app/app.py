@@ -90,7 +90,7 @@ def post_batch_weight():
     jsonData = ast.literal_eval(jsonData)
     for obj in jsonData:
         item_id = obj['id']
-        weight = obj['weight']
+        weight = int(obj['weight'])
         unit = obj['unit']
         mySQL_DAL.insert_tara_container(item_id, weight, unit)
     return 'Read file "/in/{}" and uploaded to database.'.format(filename)
