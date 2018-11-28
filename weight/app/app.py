@@ -9,7 +9,6 @@ Weight Application
 # -*-coding:utf-8 -*
 from dotenv import load_dotenv
 from flask import Flask, request, json, jsonify
-from os.path import isdir, islink
 from pathlib import Path
 from typing import List, Dict
 import ast
@@ -18,6 +17,7 @@ import csv
 import datetime
 import logging
 import mysql.connector
+import os
 import uuid
 import json
 import datetime
@@ -116,6 +116,7 @@ def post_weight():
     else:
         logging.error('Post weight function recieved illegal value for key `force`: "{}"'.format(force))
 
+    return container_ids
     # set/get unique id
     if direction == 'in' or direction == 'none':
         session_id = get_new_unique_id()
@@ -313,7 +314,7 @@ def health():
     # test existence of /in dir
     try:
         path = '../in'
-        if isdir(path) and islink(path):
+        if os.isdir(path) and os.islink(path):
             pass
     except Exception as e:
         logging.error('`/in` Directory doesn\'t exist.')
