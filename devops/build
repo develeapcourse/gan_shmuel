@@ -37,8 +37,10 @@ build_img_by_path $bills_path/app $image_tag
 
 docker-compose $docker_compose_destinations up -d
 
-pip install -U pytest
+python3 -m pip install --user pytest
 
-python -m pytest $base_dir_path/$devops_path/test_sanity.py
+python3 -m pytest $base_dir_path/$devops_path/test_sanity.py
+
+python3 -m pip uninstall --yes pytest
 
 docker-compose $docker_compose_destinations down
