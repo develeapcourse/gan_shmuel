@@ -1,3 +1,6 @@
+"""
+        mySQL - Data Access Layers, Weight-API for Database config & calls
+"""
 # -*-coding:utf-8 -*
 from dotenv import load_dotenv
 import json
@@ -13,13 +16,12 @@ load_dotenv(verbose=True)
 
 # database connection configuration and credentials:
 databaseConfig = {
-    'user': os.getenv('USER'),
-    'password': os.getenv('PASSWORD'),
-    'host': os.getenv('HOST'),
-    'port': os.getenv('PORT'),
-    'database': os.getenv('DATABASE')
+    'user': os.getenv('USER', default = 'root'),
+    'password': os.getenv('PASSWORD', default = 'root'),
+    'host': os.getenv('HOST', default = 'service_db_weight'),
+    'port': os.getenv('PORT', default = '3306'),
+    'database': os.getenv('DATABASE', default = 'weight_system')
 }
-
 
 def insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_id, produce, force):
     try:
@@ -29,17 +31,16 @@ def insert_weight(session_id, date_time, weight, unit, direction, truck_id, cont
 
     # TODO: check if force and handle appropriatley
 
-    # Insert new weight
-        add_weight = ('INSERT INTO weighings (session_id, datetime, weight, unit, direction, truck_id, container_id, produce) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)')
+        # Insert new weight
+        add_weight = ('INSERT INTO weighings (session_id, datetime, weight, unit, direction, truck_id, containers_id, produce) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)')
         data_weight = (session_id, date_time, weight, unit, direction, truck_id, container_id, produce)
         cursor.execute(add_weight, data_weight)
         cnx.commit()
         logging.info('Saved weight for session=%s, date=%s, weight=%s, unit=%s, direction=%s, truck=%s,  container/s=%s, produce=%s' % (session_id, date_time, weight, unit, direction,  truck_id, container_id, produce))
 
-    # cleanup
+        # cleanup
         cursor.close()
         cnx.close()
-
         return True  # On success
     except Exception as e:
         logging.error("Error: insert_weight could not process")
@@ -122,6 +123,26 @@ def get_session_by_time(fromTime, toTime):
     cnx.close()
 
     return json.dumps(json_data)
+
+def get_last_session_id_of_truck_entrance(truck_id):
+    """
+    Returns session id from weight table from most recent entry ('in') for `truck_id`.
+    """
+    # init connection to db
+    cnx = mysql.connector.connect(**databaseConfig)
+    cursor = cnx.cursor()
+
+    # querying db
+    query = 'SELECT session_id FROM weighings WHERE truck_id = "{}" AND direction = "in"'.format(truck_id)
+    cursor.execute(query)
+    return 'foooooooooooooooooo!!!  ' + str(cursor.fetchall())
+    #session_id = cursor.fetchall()[-1]
+
+    # cleanup
+    cursor.close()
+    cnx.close()
+
+    #return session_id
 
 def get_tara_container(containerId):
     # init connection to db
