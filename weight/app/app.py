@@ -10,6 +10,7 @@ Weight Application
 from dotenv import load_dotenv
 from flask import Flask, request, json, jsonify
 from pathlib import Path
+from time import gmtime, strftime
 from typing import List, Dict
 import ast
 import mySQL_DAL
@@ -21,25 +22,9 @@ import os
 import uuid
 import json
 import datetime
-from time import gmtime, strftime
-import os
 
 app = Flask(__name__)
 
-# Logging default level is WARNING (30), So switch to level DEBUG (10)
-logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
-
-# Setting .env path and loading its values
-load_dotenv(verbose=True)
-
-# configures and initializes MySQL database.
-config = {
-'user' : os.getenv('USER'),
-'password' : os.getenv('PASSWORD'),
-'host' : os.getenv('HOST'),
-'port' : os.getenv('PORT'),
-'database' : os.getenv('DATABASE')
-}
 
 def get_new_unique_id(output_as = 'str'):
    """
@@ -156,25 +141,29 @@ def post_batch_weight():
     Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
     File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
     """
-    filename = request.form['file']
+    try:        
+        filename = request.form['file']
 
-    if filename.endswith('.csv'):
-        jsonData = csv_to_json(filename)
-        jsonData = csv_to_json('/in/{}'.format(filename))  # returns weight as string instead of int
-    elif filename.endswith('.json'):
-        with open('/in/{}'.format(filename), 'r') as f:
-            jsonData = str(json.load(f))
-    else:
-        logging.error('File passed to /batch-weight/{} of invalid format.'.format(filename))
-        return 'Error: illegal filetype.'
+        if filename.endswith('.csv'):
+            jsonData = csv_to_json(filename)
+            jsonData = csv_to_json('/in/{}'.format(filename))  # returns weight as string instead of int
+        elif filename.endswith('.json'):
+            with open('/in/{}'.format(filename), 'r') as f:
+                jsonData = str(json.load(f))
+        else:
+            logging.error('File passed to /batch-weight/{} of invalid format.'.format(filename))
+            return 'Error: illegal filetype.'
 
-    jsonData = ast.literal_eval(jsonData)
-    for obj in jsonData:
-        item_id = obj['id']
-        weight = int(obj['weight'])
-        unit = obj['unit']
-        mySQL_DAL.insert_tara_container(item_id, weight, unit)
-    return 'Read file "/in/{}" and uploaded to database.'.format(filename)
+        jsonData = ast.literal_eval(jsonData)
+        for obj in jsonData:
+            item_id = obj['id']
+            weight = int(obj['weight'])
+            unit = obj['unit']
+            mySQL_DAL.insert_tara_container(item_id, weight, unit)
+        return 'Read file "/in/{}" and uploaded to database.'.format(filename)
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
@@ -182,9 +171,13 @@ def get_unknown_containers():
     Returns a list of all recorded containers that have unknown weight:
     ["id1","id2",...]
     """
-    unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
-    unknown_container_arr = [packed_container_id[0] for packed_container_id in ast.literal_eval(unknown_container_arr)]
-    return str(unknown_container_arr)
+    try:
+        unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
+        unknown_container_arr = [packed_container_id[0] for packed_container_id in ast.literal_eval(unknown_container_arr)]
+        return str(unknown_container_arr)
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
 @app.route('/weight?from=<string:t1>&to=<string:t2>&filter=<string:filter>', methods = ['GET'])
 def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
@@ -324,7 +317,7 @@ sessionInfos = []
 def getSession(id):
 
     try:
-        connection = mysql.connector.connect(**config)
+        connection = mysql.connector.connect(**mySQL-DAL.databaseConfig)
         cursor = connection.cursor()
         cursor.execute('SELECT * FROM weighings WHERE session_id=%s' % id)
         rv = cursor.fetchall()
@@ -401,11 +394,20 @@ def health():
 
     # test existence of /in dir
     try:
-        path = '../in'
+        path = 'app/in'
         if os.isdir(path) and os.islink(path):
             pass
     except Exception as e:
         logging.error('`/in` Directory doesn\'t exist.')
+        return 'Error: %s' % e
+
+     # test existence of dotenv file
+    try:
+        path = 'app/.env'
+        if os.isfile(path):
+            pass
+    except Exception as e:
+        logging.error('`.env` File doesn\'t exist.')
         return 'Error: %s' % e
 
     return 'ok'
