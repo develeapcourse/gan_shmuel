@@ -102,7 +102,8 @@ def get_unknown_containers():
     ["id1","id2",...]
     """
     unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
-    return unknown_container_arr
+    unknown_container_arr = [packed_container_id[0] for packed_container_id in ast.literal_eval(unknown_container_arr)]
+    return str(unknown_container_arr)
 
 @app.route('/weight?from=<string:t1>&to=<string:t2>&filter=<string:filter>', methods = ['GET'])
 def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
