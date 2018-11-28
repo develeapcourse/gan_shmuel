@@ -22,7 +22,7 @@ def insert_weight(session_id, date_time, weight, unit, direction, truck_id, cont
     # TODO: check if force and handle appropriatley
 
     # Insert new weight
-    add_weight = ('INSERT INTO weighings (session_id, datetime, weight, unit, direction, truck_id, container_id, produce) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)')
+    add_weight = ('INSERT INTO weighings (session_id, datetime, weight, unit, direction, truck_id, containers_id, produce) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)')
     data_weight = (session_id, date_time, weight, unit, direction, truck_id, container_id, produce)
     cursor.execute(add_weight, data_weight)
     cnx.commit()
@@ -92,7 +92,7 @@ def get_session_by_time(fromTime, toTime):
     query = ('SELECT * FROM weighings WHERE date_time BETWEEN %s and %s')
     cursor.execute(query, (fromTime, toTime))
     row_headers = [x[0] for x in cur.description]  # this will extract row headers
-    rv = cur.fetchall()
+    rv = cursor.fetchall()
     json_data = []
     for result in rv:
         json_data.append(dict(zip(row_headers,result)))
@@ -103,6 +103,26 @@ def get_session_by_time(fromTime, toTime):
     cnx.close()
 
     return json.dumps(json_data)
+
+def get_last_session_id_of_truck_entrance(truck_id):
+    """
+    Returns session id from weight table from most recent entry ('in') for `truck_id`.
+    """
+    # init connection to db
+    cnx = mysql.connector.connect(**databaseConfig)
+    cursor = cnx.cursor()
+
+    # querying db
+    query = 'SELECT session_id FROM weighings WHERE truck_id = "{}" AND direction = "in"'.format(truck_id)
+    cursor.execute(query)
+    return 'foooooooooooooooooo!!!  ' + str(cursor.fetchall())
+    #session_id = cursor.fetchall()[-1]
+
+    # cleanup
+    cursor.close()
+    cnx.close()
+
+    #return session_id
 
 def get_tara_container(containerId):
     # init connection to db

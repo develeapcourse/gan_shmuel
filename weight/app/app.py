@@ -105,7 +105,6 @@ def post_weight():
     # reformatting input
     direction = direction.lower().strip('"').strip('\'')
     truck_id = truck_id.lower().strip('"').strip('\'')
-    container_ids = container_ids
     unit = unit.lower().strip('"').strip('\'')
     force = force.lower().strip('"').strip('\'')
     produce = produce.lower().strip('"').strip('\'')
@@ -116,15 +115,15 @@ def post_weight():
     else:
         logging.error('Post weight function recieved illegal value for key `force`: "{}"'.format(force))
 
-    return container_ids
     # set/get unique id
     if direction == 'in' or direction == 'none':
         session_id = get_new_unique_id()
-    elif direction == 'none':
+    elif direction == 'out':
         pass
-        #lookup session id in database by most recent entry for truck_id with direction 'in'
+        session_id = mySQL_DAL.get_last_session_id_of_truck_entrance(truck_id)
     else:
         logging.error('Post weight function recieved illegal value for key `direction`: "{}"'.format(direction))
+    return session_id # DEBUG
 
     # set date_time
     date_time = swap_datetime_format(datetime.datetime.now())
@@ -178,7 +177,14 @@ def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
     - directions - comma delimited list of directions. default is "in,out,none"
     default t1 is "today at 000000". default t2 is "now".
-    returns an array of json objects, one per weighing (batch NOT included)
+    returns an array of json objects, one per weighing (batch NOT included):
+    [{ "id": <id>,
+       "direction": in/out/none,
+       "bruto": <int>, //in kg
+       "neto": <int> or "na" // na if some of containers have unknown tara
+       "produce": <str>,
+       "containers": [ id1, id2, ...]
+    },...]
     """
     t1 = request.args['from']
     t2 = request.args['to']
@@ -303,18 +309,23 @@ def health():
     """
     health function tests various components of service, if all are well it will return ok.
     """
+    # write to log
+    try:
+        logging.info('Health check!')
+    except Exception as e:
+        return 'Error writing to log: %s' % e
     # test db connection
     try:
         cnx = mysql.connector.connect(**mySQL_DAL.databaseConfig)
         cnx.close()
     except Exception as e:
         logging.error('Database Connection Failed with Error %s' % e)
-        return 'Error: %s' % e
+        return 'Error connected to database: %s' % e
 
     # test existence of /in dir
     try:
         path = '../in'
-        if os.isdir(path) and os.islink(path):
+        if os.path.isdir(path) and os.path.islink(path):
             pass
     except Exception as e:
         logging.error('`/in` Directory doesn\'t exist.')
