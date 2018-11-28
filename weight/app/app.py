@@ -222,7 +222,8 @@ def get_weighings_from_dt():
     t1 = request.args.get("from")
     t2 = request.args.get("to")
     directions = request.args.get("filter")
-    x=int(t1)
+    if directions is None:
+        directions = ['out']
     """
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
     - directions - comma delimited list of directions. default is "in,out,none"
@@ -235,7 +236,7 @@ def get_weighings_from_dt():
         cursor.execute('SELECT * , (weighings.weight - tara_containers.container_weight - tara_trucks.truck_weight) as neto  FROM weighings '
                        'LEFT JOIN tara_containers ON tara_containers.container_id = weighings.containers_id '
                        'LEFT JOIN tara_trucks ON tara_trucks.truck_id = weighings.truck_id '
-                       'WHERE  datetime BETWEEN "%d" AND "%d"AND direction in ("%s")'%(int(t1), int(t2), directions))
+                       'WHERE  datetime BETWEEN "%d" AND "%d"AND direction IN ("%s")'%(int(t1), int(t2), (", ".join(directions))))
         results = cursor.fetchall()
         cursor.close()
         connection.close()
@@ -244,11 +245,27 @@ def get_weighings_from_dt():
         return str(e)
 
 
-    t1 = request.args['from']
-    t2 = request.args['to']
-    filt = request.arg['filter']  # variable not named filter due to existing object in python.
-    return str(t1)
+    # t1 = request.args['from']
+    # t2 = request.args['to']
+    # filt = request.arg['filter']  # variable not named filter due to existing object in python.
+    # return str(t1)
     # return array of json objects
+
+def create_query_list(items):
+    res = "("
+    for item in items:
+        append_item(item, res)
+    res += ")"
+    return res
+
+
+def format_item(item):
+    return "'" + str(item) + "'"
+
+
+def append_item(item, res):
+    res += "," + format_item(item)
+
 
 @app.route('/item/<string:item_id>', methods = ['GET'])
 def get_item(item_id):
@@ -263,21 +280,21 @@ def get_item(item_id):
       "tara": <int> OR "na", // for a truck this is the "last known tara"
       "sessions": [ <id1>,...]
     }
-    """   
+    """
 
     t1 = request.args['from']
     t2 = request.args['to']
-   
+
     """
     data_tara_container = json.load(mySQL_DAL.get_tara_container(item_id))
     logging.info("data tara is: %s" % data_tara_container)
     data_tara_truck = json.load(mySQL_DAL.get_tara_truck(item_id))
     data_weighings = json.load(mySQL_DAL.get_session_by_time(t1,t2))
     return data_tara_container
-    """    
+    """
     sessions = []
     tara = ""
-       
+
     #========DAL to tara_container
     cnx = mysql.connector.connect(**databaseConfig)
     cursor = cnx.cursor()
@@ -319,10 +336,10 @@ def get_item(item_id):
          else:
              #========DAL to weighings to check the sessions id's
              query = ("SELECT * FROM weighings WHERE track_id=%s" % item_id)
-    else:  
+    else:
          #========DAL to weighings to check the sessions id's
          query = ("SELECT * FROM weighings w WHERE FIND_IN_SET(%s, w.containers)" % item_id)
-    
+
     if query != "":
          #========DAL to weighings to check the sessions id's
          cnx = mysql.connector.connect(**databaseConfig)
@@ -341,7 +358,7 @@ def get_item(item_id):
 
 
          logging.info("instance found in tara container")
-         
+
     """
     if data_tara_container == []:
         #if data_tara_track == []:
