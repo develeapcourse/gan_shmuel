@@ -17,7 +17,7 @@ CREATE TABLE tara_containers (
     PRIMARY KEY (container_id)
 );
 
-INSERT into tara_containers VALUES ("1",NULL,"kg");
+INSERT into tara_containers VALUES ("125",,"kg");
 INSERT into tara_containers VALUES ("JJ222","50","kg");
 
 CREATE TABLE weighings (

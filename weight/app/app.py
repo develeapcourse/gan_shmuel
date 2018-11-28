@@ -33,11 +33,11 @@ load_dotenv(verbose=True)
 
 # configures and initializes MySQL database.
 config = {
-    'user' : os.getenv('USER'),
-    'password' : os.getenv('PASSWORD'),
-    'host' : os.getenv('HOST'),
-    'port' : os.getenv('PORT'),
-    'database' : os.getenv('DATABASE')
+    'user': os.getenv('USER', default = 'root'),
+    'password': os.getenv('PASSWORD', default = 'root'),
+    'host': os.getenv('HOST', default = 'service_db_weight'),
+    'port': os.getenv('PORT', default = '3306'),
+    'database': os.getenv('DATABASE', default = 'weight_system')
 }
 
 def get_new_unique_id(output_as = 'str'):
@@ -91,6 +91,7 @@ def csv_to_json(csvFile):
 
 @app.route('/')
 def index():
+    #return mySQL_DAL.dump_db_table('weighings')  # DEBUGGIN
     return 'Weight application - please refer to spec. file for API instructions.'
 
 @app.route('/weightList')

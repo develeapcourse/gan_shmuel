@@ -23,7 +23,7 @@ databaseConfig = {
     'database': os.getenv('DATABASE', default = 'weight_system')
 }
 
-def dump_db(table):
+def dump_db_table(table):
     """
     Dumps all rows from `table` name.
     """
@@ -111,7 +111,7 @@ def get_unknown_weight_containers():
     cursor = cnx.cursor()
 
     # querying db
-    query = ('SELECT container_id FROM tara_containers WHERE container_weight IS NULL')
+    query = ('SELECT container_id FROM tara_containers WHERE container_weight IS NULL OR container_weight = "None"')
     cursor.execute(query)
     rv = cursor.fetchall()
     logging.info('send containers that have unknown weight')
