@@ -214,6 +214,12 @@ def mm():
 
 @app.route('/weight', methods = ['GET'])
 def get_weighings_from_dt():
+    t1 = request.args.get("from")
+    t2 = request.args.get("to")
+    directions = request.args.get("filter")
+    if directions is None:
+        directions = ['out']
+
     """
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
     - directions - comma delimited list of directions. default is "in,out,none"
@@ -238,13 +244,30 @@ def get_weighings_from_dt():
         cursor.execute('SELECT * , (weighings.weight - tara_containers.container_weight - tara_trucks.truck_weight) as neto  FROM weighings '
                        'LEFT JOIN tara_containers ON tara_containers.container_id = weighings.containers_id '
                        'LEFT JOIN tara_trucks ON tara_trucks.truck_id = weighings.truck_id '
-                       'WHERE  datetime BETWEEN "%d" AND "%d"AND direction in ("%s")'%(int(t1), int(t2), directions))
+                       'WHERE  datetime BETWEEN "%d" AND "%d"AND direction IN ("%s")'%(int(t1), int(t2), (", ".join(directions))))
         results = cursor.fetchall()
         cursor.close()
         connection.close()
         return str(results)
     except Exception as e:
         return str(e)
+
+def create_query_list(items):
+    res = "("
+    for item in items:
+        append_item(item, res)
+    res += ")"
+    return res
+
+
+def format_item(item):
+    return "'" + str(item) + "'"
+
+
+def append_item(item, res):
+    res += "," + format_item(item)
+
+
 
 @app.route('/item/<string:item_id>', methods = ['GET'])
 def get_item(item_id):
