@@ -6,10 +6,10 @@ services:
         volumes:
             - weights:/in
         ports:
-            - 6000:5000
+            - 6002:5000
 
-    app:
-        image: image_app_bills 
+    billingserviceapp:
+        image: billingserviceapp
         volumes:
             - bill_rates:/in
         ports:

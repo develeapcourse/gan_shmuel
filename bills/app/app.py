@@ -3,11 +3,17 @@ from flask import Flask, request, send_from_directory
 import mysql.connector
 import openpyxl as xl
 import json
+import requests
 import logging
 import datetime
 import re # Regular Expression
+from datetime import datetime
 
-app = Flask(__name__, static_url_path='')
+
+app = Flask(__name__, static_url_path='/')
+
+
+logging.basicConfig(filename = 'billingserviceapp.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
 databaseConfig = {
         'user': 'root',
@@ -19,28 +25,27 @@ databaseConfig = {
 
 @app.route('/truck', methods=["POST"])
 def truckInsert():
-       try:
-         connection = mysql.connector.connect(**databaseConfig)
-         cursor = connection.cursor()
-         cursor.execute('SELECT * FROM provider WHERE providerId = %d'%(int(request.form["providerId"])))
-         myProviderId = [{providerId} for (providerId) in cursor]
-         if myProviderId:
-           try:
-             cursor.execute('INSERT INTO truck VALUES (%d, %d)'%((int(request.form["truckId"])),int(request.form["providerId"])))
-             connection.commit()
-           except Exception as e:
-             return  str(e)
-           cursor.close()
-           connection.close()
-           return json.dumps({'FlaskApp': listTruck()})
-         else:
-             return "This provider does not exist in the system"
-       except Exception as e:
-              return str(e)
-
-
+    try:
+       connection = mysql.connector.connect(**databaseConfig)
+       cursor = connection.cursor()
+       cursor.execute('SELECT * FROM provider WHERE providerId = %d'%(int(request.form["providerId"])))
+       myProviderId = [{providerId} for (providerId) in cursor]
+       if myProviderId:
+          cursor.execute('INSERT INTO truck VALUES (%d, %d)'%((int(request.form["truckId"])),int(request.form["providerId"])))
+          connection.commit()
+          cursor.close()
+          connection.close()
+          return str('A  %d truck was added successfully'%(int(request.form["truckId"])))
+       else:
+         logging.error("This provider does not exist in the system")
+         return ("This %d provider does not exist in the system"%(int(request.form["providerId"])))
+    except Exception as e:
+        logging.error("Failed to add %d provider"%(int(request.form["truckId"])))
+        return str(e)
+ 
 @app.route('/provider', methods=["POST"])
 def providerInsert():
+       logging.info('Add new provider to the table')
        try:
         connection = mysql.connector.connect(**databaseConfig)
         cursor = connection.cursor()
@@ -48,47 +53,51 @@ def providerInsert():
         connection.commit()
         cursor.close()
         connection.close()
-        return json.dumps({'FlaskApp': listProvider()})
+        logging.info('A %s provider was added successfully'%(request.form["providerName"]))
+        return json.dumps({'FlaskApp': providerList()})
        except Exception as e:
+          logging.error("Failed to add truck %s"%(request.form["providerName"]))
           return str(e)
 
-@app.route('/listTruck')
+@app.route('/truckList')
 def listTruck() -> List[Dict]:
-    connection = mysql.connector.connect(**databaseConfig)
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM truck')
-    #print(cursor)
-    results = [{truckId: providerId} for (truckId, providerId) in cursor]
-    cursor.close()
-    connection.close()
-    return str(results)
+    try:
+     connection = mysql.connector.connect(**databaseConfig)
+     cursor = connection.cursor()
+     cursor.execute('SELECT * FROM truck')
+     results = [{truckId: providerId} for (truckId, providerId) in cursor]
+     cursor.close()
+     connection.close()
+     logging.info('Show all trucks successfully completed')
+     return str(results)
+    except Exception as e:
+        logging.error("Failed to view all trucks")
+        return str(e)
 
 @app.route('/getrates')
 def getRates():
     try:
         return send_from_directory('in', "rates.xlsx")
+        logging.info("rates.xlsx file downloaded successfully")
     except Exception as e:
+        logging.error("Failed to download file rates.xlsx")
         return str(e)
 
 
 @app.route('/providerList')
-def providerList():
-    connection = mysql.connector.connect(**databaseConfig)
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM provider')
-    results = [{providerId: providerName} for (providerId, providerName) in cursor]
-    cursor.close()
-    connection.close()
-    return str(results)
-
-def listProvider() -> List[Dict]:
-    connection = mysql.connector.connect(**databaseConfig)
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM provider')
-    results = [{providerId: providerName} for (providerId, providerName) in cursor]
-    cursor.close()
-    connection.close()
-    return results  
+def providerList() -> List[Dict]:
+    try:
+     connection = mysql.connector.connect(**databaseConfig)
+     cursor = connection.cursor()
+     cursor.execute('SELECT * FROM provider')
+     results = [{providerId: providerName} for (providerId, providerName) in cursor]
+     cursor.close()
+     connection.close()
+     logging.info('Show all providers successfully completed')
+     return str(results)
+    except Exception as e:
+        logging.error("Failed to view all providers")
+        return str(e)
 
 
 @app.route('/provider/<id>', methods=["POST"])
@@ -100,22 +109,65 @@ def providerUpdate(id):
         connection.commit()
         cursor.close()
         connection.close()
+        logging.info('%s provider Update'%id)
         return "ok"
-    except Exception as e: 
-        return(str(e))
+    except Exception as e:
+        logging.error("Failed to update %s provider"%id)
+        return str(e)
     
+
+@app.route('/truck/<id>', methods=["GET"])
+def get_truck(id):
+
+    date_from = request.args.get("from")
+    date_to = request.args.get("to")
+
+    if id is None:
+        logging.info("No truck id")
+        return "No truck id"
+    elif date_from is None:
+        # By default the date_from is from the first day of the current month
+        date_from = datetime.now().strftime('%Y%m01000000')
+    elif re.match("^[0-9]{14}$", date_from) is None:
+        logging.error("The format of date from {0} is not correct".format(date_from))
+        return str ("The format of date from {0} is not correct".format(date_from))
+
+    # Checking the dateTo format
+    if date_to is None:
+        # By default the date_to is now
+        date_to = datetime.now().strftime('%Y%m%d%H%M%S')
+    elif re.match("^[0-9]{14}$", date_to) is None:
+        logging.error("The format of date to {0} is not correct".format(date_to))
+        return str("The format of date to {0} is not correct".format(date_to))
+    try:
+        response = requests.get('http://service_app_weight:5000/item/{0}?from={1}&to={2}'.format(id,date_from,date_to))
+
+        if response.status_code == 404:
+            logging.error("Truck not found")
+            return "Truck not found"
+
+        logging.info("successfully get truck id={0} from={1} to={2}".format(id,date_from,date_to))
+        return response.json()
+    except Exception as error:
+        logging.error("get_truck: {0}".format( error))
+        return str("get_truck: {0}".format( error))
 
 
 
 @app.route('/truckList')
 def truckList():
-    connection = mysql.connector.connect(**databaseConfig)
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM truck')
-    results = [{truckId: providerId} for (truckId, providerId) in cursor]
-    cursor.close()
-    connection.close()
-    return str(results)
+    try:
+        connection = mysql.connector.connect(**databaseConfig)
+        cursor = connection.cursor()
+        cursor.execute('SELECT * FROM truck')
+        results = [{truckId: providerId} for (truckId, providerId) in cursor]
+        cursor.close()
+        connection.close()
+        logging.info('Show all trucks successfully completed')
+        return str(results)
+    except Exception as e:
+        logging.error("Failed to view all trucks")
+        return str(e)
 
 
 
@@ -139,9 +191,11 @@ def truckUpdate(id):
         connection.commit()
         cursor.close()
         connection.close()
+        logging.info('%s truck Update'%id)
         return "ok"
-    except Exception as e: 
-        return(str(e))
+    except Exception as e:
+        logging.error("Failed to update %s provider"%id)
+        return str(e)
     
 
 @app.route("/rates",methods=["POST"])
@@ -149,7 +203,7 @@ def postrates():
     filename = request.args.get("file")
 
     try:
-        wb = xl.load_workbook("in/" + filename )
+        wb = xl.load_workbook("/in/" + filename )
         ws = wb.get_active_sheet()
         connection = mysql.connector.connect(**databaseConfig)
         cursor = connection.cursor()
@@ -167,14 +221,18 @@ def postrates():
         connection.commit()
         cursor.close()
         connection.close()
+        logging.info("RATES UPLOADED")
         return "RATES UPLOADED"
     except FileNotFoundError:
+        logging.error("File Not Found")
         return "File Not Found"
 
     except mysql.connector.Error as error:
+        logging.error("Rates uploading failed {}".format(error))
         return "Rates uploading failed {}".format(error)
 
     except Exception as error:
+        logging.error("Error {}".format(error))
         return "Error {}".format(error)
 
 
@@ -338,10 +396,28 @@ def index() -> str:
 
 
 @app.route('/health')
-def health()-> str:
-    return "ok"
+def health():
+    # test db connection
+    try:
+        cnx = mysql.connector.connect(**databaseConfig)
+        cnx.close()
+    except Exception as e:
+        logging.error('Database connection failed with error %s' % e)
+        return 'Error: %s' % e
+
+    # test existence of /in dir
+    try:
+        path = '../in'
+        if isdir(path) and islink(path):
+            pass
+    except Exception as e:
+        logging.error('`/in` directory doesn\'t exist.')
+        return 'Error: %s' % e
+
+    return 'ok'
 
 if __name__ == '__main__':
+    logging.info('Starting Flask server...')
     print("Hi Bro")
     app.run(host='0.0.0.0',debug=True)
 

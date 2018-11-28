@@ -5,15 +5,18 @@ services:
     links:
       - billingservicedb
     ports:
-      - "5000:5000"
+      - 5000:5000
     volumes:
       - ./app:/app
+      - ./app/in:/in
 
   billingservicedb:
     image: mysql:5.7
-    ports:
-      - "32000:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - ./db:/docker-entrypoint-initdb.d/:ro
+      - data_sql:/mysql
+volumes:
+  data_sql:
+
