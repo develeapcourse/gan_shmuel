@@ -39,6 +39,20 @@ def get_new_unique_id(output_as = 'str'):
        return unique_id
    return str(unique_id)
 
+def swap_datetime_format(input_date):
+    """
+    Switches between input_date formats:
+     - String of 14 digits:   "20180720133702"
+     - Class datetime object: datetime.datetime(2018, 7, 20, 13, 37, 2, 409513)
+    """
+    if isinstance(input_date, datetime.datetime):
+        output_date = input_date.strftime('%Y%m%d%H%M%S')
+    elif isinstance(input_date, str) and len(input_date) == 14:
+        output_date = datetime.datetime.strptime(input_date, '%Y%m%d%H%M%S')
+    else:
+        logging.error('Illegal input passed to function format_datetime.')
+    return output_date
+
 def csv_to_json(csvFile):
     """
     takes an input CSV file and returns its JSON representation.
@@ -80,7 +94,7 @@ def post_weight():
     # reformatting input
     direction = direction.lower().strip('"').strip('\'')
     truck_id = truck_id.lower().strip('"').strip('\'')
-    container_ids = ast.literal_eval(container_ids)
+    container_ids = container_ids
     unit = unit.lower().strip('"').strip('\'')
     force = force.lower().strip('"').strip('\'')
     produce = produce.lower().strip('"').strip('\'')
@@ -100,10 +114,14 @@ def post_weight():
     else:
         logging.error('Post weight function recieved illegal value for key `direction`: "{}"'.format(direction))
 
-    date_time = format_datetime(datetime.datetime.now())
-    # post values to db
-    mySQL_DAL.insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_id, produce, force)
+    # set date_time
+    date_time = swap_datetime_format(datetime.datetime.now())
 
+    # post values to db
+    if mySQL_DAL.insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_ids, produce, force):
+        return 'success!'
+    else:
+        return 'something went wrong...'
     return direction  + ' ' + truck_id  + ' ' + container_ids  + ' ' + weight  + ' ' + unit  + ' ' + str(force)  + ' ' + produce
 
 @app.route('/batch-weight', methods = ['POST'])
