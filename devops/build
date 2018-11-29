@@ -1,6 +1,14 @@
 #!/bin/bash
 
-set -e
+trap_fun()
+{
+    status=$?
+    echo "Exiting in function with code"$status
+    docker-compose $docker_compose_destinations down
+    exit $status
+}
+
+trap trap_fun ERR
 
 # service directories
 base_dir_path=".."
