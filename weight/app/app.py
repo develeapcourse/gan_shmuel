@@ -7,16 +7,17 @@ Weight Application
 """
 
 # -*-coding:utf-8 -*
+from dotenv import load_dotenv
 from flask import Flask, request, json, jsonify
 from pathlib import Path
 from time import gmtime, strftime
 from typing import List, Dict
 import ast
-import mySQL_DAL
 import csv
 import datetime
 import logging
 import mysql.connector
+import mySQL_DAL
 import os
 import uuid
 import json
@@ -24,14 +25,17 @@ import datetime
 
 app = Flask(__name__)
 
-# Logging default level is WARNING (30), So switch to level DEBUG (10)
-logging.basicConfig(filename = 'weight_service_app.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+# Configure logging
+logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+
+# Setting .env path and loading its values
+load_dotenv(verbose=True)
 
 def get_new_unique_id(output_as = 'str'):
-   """
-   Returns a new unique id as a string, or (if passed argument 'int') as an integer.
+    """
+    Returns a new unique id as a string, or (if passed argument 'int') as an integer.
 
-   """
+    """
     try:
         unique_id = abs(hash(datetime.datetime.now()))
         if output_as.lower() == 'int':
@@ -75,8 +79,10 @@ def csv_to_json(csvFile):
         logging.error("Error: %s" % e)
         return str(e)
 
+
 @app.route('/')
 def index():
+    #return mySQL_DAL.dump_db_table('weighings')  # DEBUGGIN
     return 'Weight application - please refer to spec. file for API instructions.'
 
 @app.route('/weightList')
@@ -129,7 +135,7 @@ def post_weight():
             force = False
         else:
             logging.error('Post weight function recieved illegal value for key `force`: "{}"'.format(force))
-            break
+            return 'something went wrong...'
 
         # set/get unique id
         if direction == 'in' or direction == 'none':
@@ -159,9 +165,8 @@ def post_batch_weight():
     Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
     File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
     """
-    try:        
+    try:
         filename = request.form['file']
-
         if filename.endswith('.csv'):
             jsonData = csv_to_json(filename)
             jsonData = csv_to_json('/in/{}'.format(filename))  # returns weight as string instead of int
@@ -175,7 +180,7 @@ def post_batch_weight():
         jsonData = ast.literal_eval(jsonData)
         for obj in jsonData:
             item_id = obj['id']
-            weight = int(obj['weight'])
+            weight = str(obj['weight'])
             unit = obj['unit']
             mySQL_DAL.insert_tara_container(item_id, weight, unit)
         return 'Read file "/in/{}" and uploaded to database.'.format(filename)
@@ -196,8 +201,6 @@ def get_unknown_containers():
     except Exception as e:
         logging.error("Error: %s" % e)
         return str(e)
-
-
 
 @app.route('/aa', methods= ['GET'])
 def mm():
@@ -246,7 +249,7 @@ def get_weighings_from_dt():
         cursor.execute('SELECT * , (weighings.weight - tara_containers.container_weight - tara_trucks.truck_weight) as neto  FROM weighings '
                        'LEFT JOIN tara_containers ON tara_containers.container_id = weighings.containers_id '
                        'LEFT JOIN tara_trucks ON tara_trucks.truck_id = weighings.truck_id '
-                       'WHERE  datetime BETWEEN "%d" AND "%d"AND direction IN ("%s")'%(int(t1), int(t2), (", ".join(directions))))
+                       'WHERE  datetime BETWEEN "%d" AND "%d" AND direction IN ("%s")'%(int(t1), int(t2), (", ".join(directions))))
         results = cursor.fetchall()
         cursor.close()
         connection.close()
@@ -459,14 +462,15 @@ def getSession(id):
 @app.route('/health', methods = ['GET'])
 def health():
     """
-    health function tests various components of service, if all are well it will return ok.
+    Health function tests various components of service, if all are well it will return ok.
     """
-    # write to log
+    # Test write to log
     try:
         logging.info('Health check!')
     except Exception as e:
         return 'Error writing to log: %s' % e
-    # test db connection
+
+    # Test db connection
     try:
         cnx = mysql.connector.connect(**mySQL_DAL.databaseConfig)
         cnx.close()
@@ -474,19 +478,19 @@ def health():
         logging.error('Database Connection Failed with Error %s' % e)
         return 'Error connected to database: %s' % e
 
-    # test existence of /in dir
+    # Test existence of /in dir
     try:
-        path = 'app/in'
-        if os.isdir(path) and os.islink(path):
-            pass
+        path = '/in'
+        os.path.isdir(path)
+        os.path.islink(path)
     except Exception as e:
         logging.error('`/in` Directory doesn\'t exist.')
         return 'Error: %s' % e
 
-     # test existence of dotenv file
+    # test existence of dotenv file
     try:
-        path = 'app/.env'
-        if os.isfile(path):
+        path = '/app/.env'
+        if os.path.isfile(path):
             pass
     except Exception as e:
         logging.error('`.env` File doesn\'t exist.')
