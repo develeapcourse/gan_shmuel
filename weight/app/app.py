@@ -26,7 +26,7 @@ import datetime
 app = Flask(__name__)
 
 # Configure logging
-logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+logging.basicConfig(filename = 'weight_system.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
 # Setting .env path and loading its values
 load_dotenv(verbose=True)
@@ -91,7 +91,7 @@ def csv_to_json(csvFile):
 
 @app.route('/')
 def index():
-    #return mySQL_DAL.dump_db_table('weighings')  # DEBUGGIN
+    return mySQL_DAL.dump_db_table('weighings')  # DEBUGGIN
     return 'Weight application - please refer to spec. file for API instructions.'
 
 @app.route('/weightList')
@@ -123,21 +123,14 @@ def post_weight():
     }
     """
     try:
-        # getting input
-        direction = request.form['direction']
-        truck_id = request.form['truck']
+        # getting and reformatting input
+        direction = request.form['direction'].lower().strip('"').strip('\'')
+        truck_id = request.form['truck'].lower().strip('"').strip('\'')
         container_ids = request.form['containers']
         weight = request.form['weight']
-        unit = request.form['unit']
-        force = request.form['force']
-        produce = request.form['produce']
-
-        # reformatting input
-        direction = direction.lower().strip('"').strip('\'')
-        truck_id = truck_id.lower().strip('"').strip('\'')
-        unit = unit.lower().strip('"').strip('\'')
-        force = force.lower().strip('"').strip('\'')
-        produce = produce.lower().strip('"').strip('\'')
+        unit = request.form['unit'].lower().strip('"').strip('\'')
+        force = request.form['force'].lower().strip('"').strip('\'')
+        produce = request.form['produce'].lower().strip('"').strip('\'')
         if force == "true":
             force = True
         elif force == "false":
@@ -153,17 +146,22 @@ def post_weight():
             session_id = mySQL_DAL.get_last_session_id_of_truck_entrance(truck_id)
         else:
             logging.error('Post weight function recieved illegal value for key `direction`: "{}"'.format(direction))
-        return session_id # DEBUG
 
         # set date_time
         date_time = swap_datetime_format(datetime.datetime.now())
 
         # post values to db
         if mySQL_DAL.insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_ids, produce, force):
-            return 'success!'
+            jsonResult = {
+                'id': session_id,
+                'truck': truck_id,
+                'bruto': weight,
+                'truckTara': 'TBD',
+                'neto': 'TBD'
+            }
+            return str(jsonResult)
         else:
             return 'something went wrong...'
-        return direction  + ' ' + truck_id  + ' ' + container_ids  + ' ' + weight  + ' ' + unit  + ' ' + str(force)  + ' ' + produce
     except Exception as e:
         logging.error("Error: %s" % e)
         return str(e)
