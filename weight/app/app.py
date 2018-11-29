@@ -9,46 +9,52 @@ Weight Application
 # -*-coding:utf-8 -*
 from dotenv import load_dotenv
 from flask import Flask, request, json, jsonify
-from os.path import isdir, islink
 from pathlib import Path
+from time import gmtime, strftime
 from typing import List, Dict
 import ast
-import mySQL_DAL
 import csv
 import datetime
 import logging
 import mysql.connector
+import mySQL_DAL
+import os
 import uuid
 import json
 import datetime
-from time import gmtime, strftime
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/')
 
-# Logging default level is WARNING (30), So switch to level DEBUG (10)
-logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+# Configure logging
+logging.basicConfig(filename = '/var/log/weight/weight_system.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+
 
 # Setting .env path and loading its values
 load_dotenv(verbose=True)
 
-# configures and initializes MySQL database.
-config = {
-'user' : os.getenv('USER'),
-'password' : os.getenv('PASSWORD'),
-'host' : os.getenv('HOST'),
-'port' : os.getenv('PORT'),
-'database' : os.getenv('DATABASE')
+# database connection configuration and credentials:
+databaseConfig = {
+    'user': os.getenv('USER', default = 'root'),
+    'password': os.getenv('PASSWORD', default = 'root'),
+    'host': os.getenv('HOST', default = 'service_db_weight'),
+    'port': os.getenv('PORT', default = '3306'),
+    'database': os.getenv('DATABASE', default = 'weight_system')
 }
 
-def get_new_unique_id(output_as = 'str'):
-   """
-   Returns a new unique id as a string, or (if passed argument 'int') as an integer.
 
-   """
-   unique_id = abs(hash(datetime.datetime.now()))
-   if output_as.lower() == 'int':
-       return unique_id
-   return str(unique_id)
+def get_new_unique_id(output_as = 'str'):
+    """
+    Returns a new unique id as a string, or (if passed argument 'int') as an integer.
+
+    """
+    try:
+        unique_id = abs(hash(datetime.datetime.now()))
+        if output_as.lower() == 'int':
+            return unique_id
+        return str(unique_id)
+    except Exception as e:
+        logging.error("(APP) FAIL: %s" % e)
+        return str(e)
 
 def swap_datetime_format(input_date):
     """
@@ -56,28 +62,55 @@ def swap_datetime_format(input_date):
      - String of 14 digits:   "20180720133702"
      - Class datetime object: datetime.datetime(2018, 7, 20, 13, 37, 2, 409513)
     """
-    if isinstance(input_date, datetime.datetime):
-        output_date = input_date.strftime('%Y%m%d%H%M%S')
-    elif isinstance(input_date, str) and len(input_date) == 14:
-        output_date = datetime.datetime.strptime(input_date, '%Y%m%d%H%M%S')
-    else:
-        logging.error('Illegal input passed to function format_datetime.')
-    return output_date
+    try:
+        if isinstance(input_date, datetime.datetime):
+            output_date = input_date.strftime('%Y%m%d%H%M%S')
+        elif isinstance(input_date, str) and len(input_date) == 14:
+            output_date = datetime.datetime.strptime(input_date, '%Y%m%d%H%M%S')
+        else:
+            logging.error('(APP) FAIL - Illegal input passed to function format_datetime.')
+            return "Illegal input passed to function format_datetime."
+        return output_date
+    except Exception as e:
+        logging.error("(APP) FAIL: %s" % e)
+        return str(e)
 
 def csv_to_json(csvFile):
     """
     takes an input CSV file and returns its JSON representation.
     """
-    data = []
-    with open(csvFile) as f:
-        for row in csv.DictReader(f):
-            data.append(row)
-    json_data = json.dumps(data)
-    return json_data
+    try:
+        data = []
+        with open(csvFile) as f:
+            for row in csv.DictReader(f):
+                data.append(row)
+        json_data = jsonify(data)
+        return json_data
+    except Exception as e:
+        logging.error("(APP) FAIL : %s" % e)
+        return str(e)
+
 
 @app.route('/')
 def index():
+    debug = '\ntable dump:\n'
+    debug += mySQL_DAL.dump_db_table('tara_containers')
+    return debug
     return 'Weight application - please refer to spec. file for API instructions.'
+
+@app.route('/weightList')
+def providerList() -> List[Dict]:
+    try:
+        connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+        cursor = connection.cursor()
+        results = cursor.execute('SELECT * FROM weighings WHERE ')
+        cursor.close()
+        connection.close()
+        logging.info('(APP) INFO - Show all providers successfully completed')
+        return str(results)
+    except Exception as e:
+        logging.error("(APP) FAIL - Failed to view all providers")
+        return str(e)
 
 @app.route('/weight', methods = ['POST'])
 def post_weight():
@@ -93,47 +126,49 @@ def post_weight():
       "neto": <int> or "na" // na if some of containers have unknown tara
     }
     """
-    # getting input
-    direction = request.form['direction']
-    truck_id = request.form['truck']
-    container_ids = request.form['containers']
-    weight = request.form['weight']
-    unit = request.form['unit']
-    force = request.form['force']
-    produce = request.form['produce']
+    try:
+        # getting and reformatting input
+        direction = request.form['direction'].lower().strip('"').strip('\'')
+        truck_id = request.form['truck'].lower().strip('"').strip('\'')
+        container_ids = request.form['containers']
+        weight = request.form['weight']
+        unit = request.form['unit'].lower().strip('"').strip('\'')
+        force = request.form['force'].lower().strip('"').strip('\'')
+        produce = request.form['produce'].lower().strip('"').strip('\'')
+        if force == "true":
+            force = True
+        elif force == "false":
+            force = False
+        else:
+            logging.error('(APP) FAIL - Post weight function recieved illegal value for key `force`: "{}"'.format(force))
+            return 'something went wrong...'
 
-    # reformatting input
-    direction = direction.lower().strip('"').strip('\'')
-    truck_id = truck_id.lower().strip('"').strip('\'')
-    container_ids = container_ids
-    unit = unit.lower().strip('"').strip('\'')
-    force = force.lower().strip('"').strip('\'')
-    produce = produce.lower().strip('"').strip('\'')
-    if force == "true":
-        force = True
-    elif force == "false":
-        force = False
-    else:
-        logging.error('Post weight function recieved illegal value for key `force`: "{}"'.format(force))
+        # set/get unique id
+        if direction == 'in' or direction == 'none':
+            session_id = get_new_unique_id()
+        elif direction == 'out':
+            session_id = mySQL_DAL.get_last_session_id_of_truck_entrance(truck_id)
+        else:
+            logging.error('(APP) FAIL - Post weight function recieved illegal value for key `direction`: "{}"'.format(direction))
 
-    # set/get unique id
-    if direction == 'in' or direction == 'none':
-        session_id = get_new_unique_id()
-    elif direction == 'none':
-        pass
-        #lookup session id in database by most recent entry for truck_id with direction 'in'
-    else:
-        logging.error('Post weight function recieved illegal value for key `direction`: "{}"'.format(direction))
+        # set date_time
+        date_time = swap_datetime_format(datetime.datetime.now())
 
-    # set date_time
-    date_time = swap_datetime_format(datetime.datetime.now())
-
-    # post values to db
-    if mySQL_DAL.insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_ids, produce, force):
-        return 'success!'
-    else:
-        return 'something went wrong...'
-    return direction  + ' ' + truck_id  + ' ' + container_ids  + ' ' + weight  + ' ' + unit  + ' ' + str(force)  + ' ' + produce
+        # post values to db
+        if mySQL_DAL.insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_ids, produce, force):
+            jsonResult = {
+                'id': session_id,
+                'truck': truck_id,
+                'bruto': weight,
+                'truckTara': 'TBD',
+                'neto': 'TBD'
+            }
+            return str(jsonResult)
+        else:
+            return 'something went wrong...'
+    except Exception as e:
+        logging.error("(APP) FAIL: %s" % e)
+        return str(e)
 
 @app.route('/batch-weight', methods = ['POST'])
 def post_batch_weight():
@@ -141,25 +176,28 @@ def post_batch_weight():
     Will upload list of tara weights from a file in "/in" folder. Usually used to accept a batch of new containers.
     File formats accepted: csv (id,kg), csv (id,lbs), json ([{"id":..,"weight":..,"unit":..},...])
     """
-    filename = request.form['file']
+    try:
+        filename = request.form['file']
+        if filename.endswith('.csv'):
+            jsonData = csv_to_json(filename)
+            jsonData = csv_to_json('/in/{}'.format(filename))  # returns weight as string instead of int
+        elif filename.endswith('.json'):
+            with open('/in/{}'.format(filename), 'r') as f:
+                jsonData = str(json.load(f))
+        else:
+            logging.error('(APP) FAIL - File passed to /batch-weight/{} of invalid format.'.format(filename))
+            return 'Error: illegal filetype.'
 
-    if filename.endswith('.csv'):
-        jsonData = csv_to_json(filename)
-        jsonData = csv_to_json('/in/{}'.format(filename))  # returns weight as string instead of int
-    elif filename.endswith('.json'):
-        with open('/in/{}'.format(filename), 'r') as f:
-            jsonData = str(json.load(f))
-    else:
-        logging.error('File passed to /batch-weight/{} of invalid format.'.format(filename))
-        return 'Error: illegal filetype.'
-
-    jsonData = ast.literal_eval(jsonData)
-    for obj in jsonData:
-        item_id = obj['id']
-        weight = int(obj['weight'])
-        unit = obj['unit']
-        mySQL_DAL.insert_tara_container(item_id, weight, unit)
-    return 'Read file "/in/{}" and uploaded to database.'.format(filename)
+        jsonData = ast.literal_eval(jsonData)
+        for obj in jsonData:
+            item_id = obj['id']
+            weight = str(obj['weight'])
+            unit = obj['unit']
+            mySQL_DAL.insert_tara_container(item_id, weight, unit)
+        return 'Read file "/in/{}" and uploaded to database.'.format(filename)
+    except Exception as e:
+        logging.error("(APP) FAIL: %s" % e)
+        return str(e)
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
@@ -167,26 +205,89 @@ def get_unknown_containers():
     Returns a list of all recorded containers that have unknown weight:
     ["id1","id2",...]
     """
-    unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
-    unknown_container_arr = [packed_container_id[0] for packed_container_id in ast.literal_eval(unknown_container_arr)]
-    return str(unknown_container_arr)
+    try:
+        unknown_container_arr = mySQL_DAL.get_unknown_weight_containers()
+        unknown_container_arr = [packed_container_id[0] for packed_container_id in ast.literal_eval(unknown_container_arr)]
+        return str(unknown_container_arr)
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
-@app.route('/weight?from=<string:t1>&to=<string:t2>&filter=<string:filter>', methods = ['GET'])
-def get_weighings_from_dt(t1, t2, directions = ['in', 'out', 'none']):
+@app.route('/aa', methods= ['GET'])
+def mm():
+    try:
+     connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+     cursor = connection.cursor()
+     cursor.execute('SELECT * FROM weighings')
+     results = cursor.fetchall()
+     cursor.close()
+     connection.close()
+     logging.info('(APP) INFO - Show all providers successfully completed')
+     return str(results)
+    except Exception as e:
+        logging.error("(APP) FAIL - Failed to view all providers")
+        return str(e)
+
+@app.route('/weight', methods = ['GET'])
+def get_weighings_from_dt():
+    t1 = request.args.get("from")
+    t2 = request.args.get("to")
+    directions = request.args.get("filter")
+    if directions is None:
+        directions = ['out']
+
     """
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
     - directions - comma delimited list of directions. default is "in,out,none"
     default t1 is "today at 000000". default t2 is "now".
-    returns an array of json objects, one per weighing (batch NOT included)
+    returns an array of json objects, one per weighing (batch NOT included):
+    [{ "id": <id>,
+       "direction": in/out/none,
+       "bruto": <int>, //in kg
+       "neto": <int> or "na" // na if some of containers have unknown tara
+       "produce": <str>,
+       "containers": [ id1, id2, ...]
+    },...]
     """
-    t1 = request.args['from']
-    t2 = request.args['to']
-    filt = request.arg['filter']  # variable not named filter due to existing object in python.
-    
-    # return array of json objects
+    t1 = request.args.get("from")
+    t2 = request.args.get("to")
+    directions = request.args.get("filter")
+    x=int(t1)
+    try:
+        connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
+        cursor = connection.cursor()
+        #cursor.execute('SELECT * FROM weighings WHERE direction = "%s"'% directions)
+        cursor.execute('SELECT * , (weighings.weight - tara_containers.container_weight - tara_trucks.truck_weight) as neto  FROM weighings '
+                       'LEFT JOIN tara_containers ON tara_containers.container_id = weighings.containers_id '
+                       'LEFT JOIN tara_trucks ON tara_trucks.truck_id = weighings.truck_id '
+                       'WHERE  datetime BETWEEN "%d" AND "%d" AND direction IN ("%s")'%(int(t1), int(t2), (", ".join(directions))))
+        results = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return str(results)
+    except Exception as e:
+        logging.error("(APP) FAIL - %s" % e)
+        return str(e)
+
+def create_query_list(items):
+    res = "("
+    for item in items:
+        append_item(item, res)
+    res += ")"
+    return res
+
+
+def format_item(item):
+    return "'" + str(item) + "'"
+
+
+def append_item(item, res):
+    res += "," + format_item(item)
+
+
 
 @app.route('/item/<string:item_id>', methods = ['GET'])
-def get_item(item_id):  # This doesn't belong in the function params: " item_id, t1=time.strftime('%Y%m%d%H%M%S',date(date.today().year, 1, 1)), t2=strftime('%Y%m%d%H%M%S', gmtime()) "
+def get_item(item_id):
     """
     - id is for an item (truck or container). 404 will be returned if non-existent
     - t1,t2 - date-time stamps, formatted as yyyymmddhhmmss. server time is assumed.
@@ -202,17 +303,103 @@ def get_item(item_id):  # This doesn't belong in the function params: " item_id,
     t1 = request.args['from']
     t2 = request.args['to']
 
-    data_tara_container = json.load(get_tara_container(item_id))
-    data_tara_truck = json.load(get_tara_truck(item_id))
-    data_weighings = json.load(get_session_by_time(t1,t2))
+    """
+    data_tara_container = json.load(mySQL_DAL.get_tara_container(item_id))
+    logging.info("data tara is: %s" % data_tara_container)
+    data_tara_truck = json.load(mySQL_DAL.get_tara_truck(item_id))
+    data_weighings = json.load(mySQL_DAL.get_session_by_time(t1,t2))
+    return data_tara_container
 
-    return_data = {}
+    """
     sessions = []
     tara = ""
+    data = []   
+    json_data = []
+
+    #========DAL to tara_container
+    cnx = mysql.connector.connect(**databaseConfig)
+    cursor = cnx.cursor()
+    #quering db
+    query = ("SELECT * FROM tara_containers WHERE container_id=%s" % item_id)
+    cursor.execute(query)
+    row_headers=[x[0] for x in cursor.description] #this will extract row headers
+    rv = cursor.fetchall()
+    item_data = []
+    for result in rv:
+        item_data.append(dict(zip(row_headers,result)))
+    logging.info('(APP) INFO - send specific container and data is: %s' % rv)
+    # cleanup
+    cursor.close()
+    cnx.close()
+    query=""
+    logging.info("item data is: %s and json dumps is: %s" % (item_data, json.dumps(item_data)))
+    if item_data == []: 
+         #======DAL to tara_tracks - to check if item is from tracks table
+         cnx = mysql.connector.connect(**databaseConfig)
+         cursor = cnx.cursor()
+         #quering db
+         query = ("SELECT * FROM tara_trucks WHERE truck_id=%s" % item_id)
+         cursor.execute(query)
+         row_headers=[x[0] for x in cursor.description] #this will extract row headers
+         rv = cursor.fetchall()
+         logging.info("data: %s" % rv)
+         item_data = []
+         for result in rv:
+                item_data.append(dict(zip(row_headers,result)))
+         # cleanup
+         cursor.close()
+         cnx.close()
+         query=""
+         logging.info("item data is: %s and json dumps is: %s" % (item_data, json.dumps(item_data)))
+         if item_data == []:
+             logging.error("(APP) FAIL - 404 non-existent item, item-id: %s" % item_id)
+             return "404 not found"
+         else:
+             tara = item_data[0]['truck_weight']
+             #========DAL to weighings to check the sessions id's
+             query = ("SELECT * FROM weighings w WHERE w.truck_id=%s and w.datetime BETWEEN %s and %s" % (item_id, t1, t2))
+    else:  
+         tara = item_data[0]['container_weight']
+         #========DAL to weighings to check the sessions id's
+         query = ("SELECT * FROM weighings w WHERE FIND_IN_SET(%s, w.containers_id) and w.datetime BETWEEN %s and %s" % (item_id, t1, t2))
+    if query != "":
+         #========DAL to weighings to check the sessions id's
+         cnx = mysql.connector.connect(**databaseConfig)
+         cursor = cnx.cursor()
+         #quering db
+         cursor.execute(query)
+         row_headers=[x[0] for x in cursor.description] #this will extract row headers
+         rv = cursor.fetchall()
+         session_data = []
+         for result in rv:
+              session_data.append(dict(zip(row_headers,result)))
+         logging.info('data is: %s' % rv)
+         # cleanup
+         cursor.close()
+         cnx.close()
+         for k,v in session_data:
+               sessions.append(v['session_id'])
+         data['id'] = item_id
+         data['tara'] = tara
+         data['sessions'] = sessions 
+         json_data = json.dumps(data)
+         logging.info("(APP) INFO - instance found in tara container")
+         return jsonify(json_data)
+    """
+     except Exception as e:
+        logging.error('some erorr accured')
+        return 'Error: %s' % e
+    """
+    """
     if data_tara_container == []:
-        if data_tara_track == []:
-            return("404 not-found")
-            logging.error("404 non-existent item, item-id: %s" % item_id)
+        #if data_tara_track == []:
+
+               # logging.error("404 non-existent item, item-id: %s" % item_id)
+            else:
+                tara = data_tara_track[0]['weight'] + data_tara_track[0]['unit']
+                for k,v in data_weighings.items():
+                    if v['track_id'] == item_id and v['date'] >= t1 and v['date'] <= t2:
+                        sessions.append(v['session_id'])
         else:
             tara = data_tara_track[0]['weight'] + data_tara_track[0]['unit']
             for k,v in data_weighings.items():
@@ -232,17 +419,23 @@ def get_item(item_id):  # This doesn't belong in the function params: " item_id,
 
     return json.dumps(json_data)
 
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
+    """
+
 @app.route('/session/<id>', methods = ['GET'])
 def getSession(id):
+
     try:
-        connection = mysql.connector.connect(**config)
+        connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
         cursor = connection.cursor()
         cursor.execute('SELECT * FROM weighings WHERE session_id=%s' % id)
         rv = cursor.fetchall()
         cursor.close()
-        logging.info("fetched session info")
+        logging.info("(APP) INFO - fetched session info")
         if str(len(rv)) == "0":
-            logging.warning("Session is Empty")
+            logging.warning("(APP) WARNING - Session is Empty")
             return 'Session is Empty'
         else:
             payload = []
@@ -266,7 +459,7 @@ def getSession(id):
                         cursor.execute('SELECT container_weight FROM tara_containers WHERE container_id="111"')#%s" % container
                         container = cursor.fetchone() 
                         cursor.close()
-                        if str(container) == 'None':
+                        if str(container) is None:
                             logging.error("Container Not Found")
                             na_counter += 1
                             break
@@ -286,41 +479,58 @@ def getSession(id):
                         payload.append(content)
                         content = {}
                     else:
-                        logging.error("BUG found in containers_weight")
+                        logging.error("(APP) FAIL - BUG found in containers_weight")
                         return "Error Found in Container Weighting"
                 else:
-                    logging.error("Session Does not Exist")
+                    logging.error("(APP) FAIL - Session Does not Exist")
                     return 'Session Not Found'
             return jsonify(payload)     
         connection.close()
     except Exception as e:
-        logging.error("Error: DB Down")
+        logging.error("(APP) FAIL: %s" % e)
         return str(e)
   
 @app.route('/health', methods = ['GET'])
 def health():
     """
-    health function tests various components of service, if all are well it will return ok.
+    Health function tests various components of service, if all are well it will return ok.
     """
-    # test db connection
+    # Test write to log
+    try:
+        logging.info('(APP) INFO - Health check!')
+    except Exception as e:
+        return 'Error writing to log: %s' % e
+
+    # Test db connection
     try:
         cnx = mysql.connector.connect(**mySQL_DAL.databaseConfig)
         cnx.close()
     except Exception as e:
-        logging.error('Database Connection Failed with Error %s' % e)
+        logging.error('(APP) FAIL - Database Connection Failed with Error %s' % e)
+        return 'Error connected to database: %s' % e
+
+    # Test existence of /in dir
+    try:
+        path = '/in'
+        os.path.isdir(path)
+        os.path.islink(path)
+    except Exception as e:
+        logging.error('(APP) FAIL - `/in` Directory doesn\'t exist.')
         return 'Error: %s' % e
 
-    # test existence of /in dir
+    # test existence of dotenv file
     try:
-        path = '../in'
-        if isdir(path) and islink(path):
+        path = '/app/.env'
+        if os.path.isfile(path):
             pass
     except Exception as e:
-        logging.error('`/in` Directory doesn\'t exist.')
+        logging.error('(APP) FAIL - `.env` File doesn\'t exist.')
         return 'Error: %s' % e
 
     return 'ok'
 
 if __name__ == '__main__':
-    logging.info('Starting Flask server...')
+    logging.info('(APP) INFO - Starting Flask server...')
     app.run(host='0.0.0.0', debug=True, port=5000)
+
+
