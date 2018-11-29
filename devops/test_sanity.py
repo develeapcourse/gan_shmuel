@@ -30,19 +30,19 @@ def test_health2():
 
 ################ weight tests ################
 
-# def test_post_weight():
-# 	payload = {
-# 		'direction' : 'in',
-# 		'truck' : '47298743h(@*#FJASDH098234h',
-# 		'containers' : '1111, 2222', 
-# 		'weight' : 5500,
-# 		'unit' : 'kg',
-# 		'force' : 'true',
-# 		'produce' : 'orange'
-# 	}
-# 	global session_response
-# 	session_response = requests.post(url=url_weight+"/weight", data=payload)
-# 	assert session_response.status_code == 200
+def test_post_weight():
+	payload = {
+		'direction' : 'in',
+		'truck' : '47298743h(@*#FJASDH098234h',
+		'containers' : '1111, 2222', 
+		'weight' : 5500,
+		'unit' : 'kg',
+		'force' : 'true',
+		'produce' : 'orange'
+	}
+	global session_response
+	session_response = requests.post(url=url_weight+"/weight", data=payload)
+	assert session_response.status_code == 200
 
 
 ################ bills tests #################
