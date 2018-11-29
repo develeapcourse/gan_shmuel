@@ -214,7 +214,7 @@ def get_item(item_id):
       "sessions": [ <id1>,...]
     }
     """   
-
+    
     t1 = request.args['from']
     t2 = request.args['to']
    
@@ -227,7 +227,9 @@ def get_item(item_id):
     """    
     sessions = []
     tara = ""
-       
+    data = []   
+    json_data = []
+   
     #========DAL to tara_container
     cnx = mysql.connector.connect(**databaseConfig)
     cursor = cnx.cursor()
@@ -245,12 +247,12 @@ def get_item(item_id):
     cnx.close()
     query=""
     logging.info("item data is: %s and json dumps is: %s" % (item_data, json.dumps(item_data)))
-    if item_data == []:
+    if item_data == []: 
          #======DAL to tara_tracks - to check if item is from tracks table
          cnx = mysql.connector.connect(**databaseConfig)
          cursor = cnx.cursor()
          #quering db
-         query = ("SELECT * FROM tara_tracks WHERE track_id=%s" % item_id)
+         query = ("SELECT * FROM tara_trucks WHERE truck_id=%s" % item_id)
          cursor.execute(query)
          row_headers=[x[0] for x in cursor.description] #this will extract row headers
          rv = cursor.fetchall()
@@ -267,11 +269,13 @@ def get_item(item_id):
              logging.error("404 non-existent item, item-id: %s" % item_id)
              return "404 not found"
          else:
+             tara = item_data[0]['truck_weight']
              #========DAL to weighings to check the sessions id's
-             query = ("SELECT * FROM weighings WHERE track_id=%s" % item_id)
+             query = ("SELECT * FROM weighings w WHERE w.truck_id=%s and w.datetime BETWEEN %s and %s" % (item_id, t1, t2))
     else:  
+         tara = item_data[0]['container_weight']
          #========DAL to weighings to check the sessions id's
-         query = ("SELECT * FROM weighings w WHERE FIND_IN_SET(%s, w.containers)" % item_id)
+         query = ("SELECT * FROM weighings w WHERE FIND_IN_SET(%s, w.containers_id) and w.datetime BETWEEN %s and %s" % (item_id, t1, t2))
     
     if query != "":
          #========DAL to weighings to check the sessions id's
@@ -288,10 +292,21 @@ def get_item(item_id):
          # cleanup
          cursor.close()
          cnx.close()
-
-
+         for k,v in session_data:
+               sessions.append(v['session_id'])
+         data['id'] = item_id
+         data['tara'] = tara
+         data['sessions'] = sessions 
+         json_data = json.dumps(data)
          logging.info("instance found in tara container")
-         
+         return jsonify(json_data)
+    """ 
+     except Exception as e:
+        logging.error('some erorr accured')
+        return 'Error: %s' % e
+    """
+    
+     
     """
     if data_tara_container == []:
         #if data_tara_track == []:
