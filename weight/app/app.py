@@ -82,7 +82,9 @@ def csv_to_json(csvFile):
 
 @app.route('/')
 def index():
-    return mySQL_DAL.dump_db_table('weighings')  # DEBUGGIN
+    debug = '\ntable dump:\n'
+    debug += mySQL_DAL.dump_db_table('tara_containers')
+    return debug
     return 'Weight application - please refer to spec. file for API instructions.'
 
 @app.route('/weightList')
@@ -289,18 +291,18 @@ def get_item(item_id):
         t1 = request.args['from']
         t2 = request.args['to']
 
-    """
-    data_tara_container = json.load(mySQL_DAL.get_tara_container(item_id))
-    logging.info("data tara is: %s" % data_tara_container)
-    data_tara_truck = json.load(mySQL_DAL.get_tara_truck(item_id))
-    data_weighings = json.load(mySQL_DAL.get_session_by_time(t1,t2))
-    return data_tara_container
-    """
+        """
+        data_tara_container = json.load(mySQL_DAL.get_tara_container(item_id))
+        logging.info("data tara is: %s" % data_tara_container)
+        data_tara_truck = json.load(mySQL_DAL.get_tara_truck(item_id))
+        data_weighings = json.load(mySQL_DAL.get_session_by_time(t1,t2))
+        return data_tara_container
+        """
         sessions = []
         tara = ""
 
         #========DAL to tara_container
-        cnx = mysql.connector.connect(**mySQL-DAL.databaseConfig)
+        cnx = mysql.connector.connect(**mySQL_DAL.databaseConfig)
         cursor = cnx.cursor()
         #quering db
         query = ("SELECT * FROM tara_containers WHERE container_id=%s" % item_id)
@@ -362,30 +364,30 @@ def get_item(item_id):
 
              logging.info("instance found in tara container")
 
-    """
-    if data_tara_container == []:
-        #if data_tara_track == []:
+        """
+        if data_tara_container == []:
+            #if data_tara_track == []:
 
-           # logging.error("404 non-existent item, item-id: %s" % item_id)
+               # logging.error("404 non-existent item, item-id: %s" % item_id)
+            else:
+                tara = data_tara_track[0]['weight'] + data_tara_track[0]['unit']
+                for k,v in data_weighings.items():
+                    if v['track_id'] == item_id and v['date'] >= t1 and v['date'] <= t2:
+                        sessions.append(v['session_id'])
         else:
-            tara = data_tara_track[0]['weight'] + data_tara_track[0]['unit']
-            for k,v in data_weighings.items():
-                if v['track_id'] == item_id and v['date'] >= t1 and v['date'] <= t2:
-                    sessions.append(v['session_id'])
-    else:
-          tara= data_tara_track[0]['weight'] + data_tara_track[0]['unit']
-          for k,v in data_weighings:
-              if v['date'] >= t1 and v['date'] <= t2:
-                   for con in v['container_id']:
-                       if con == item_id:
-                           sessions.append(v['session_id'])
-    data['id'] = item_id
-    data['tara'] = tara
-    data['sessions'] = sessions 
-    json_data = json.dumps(return_data)
+              tara= data_tara_track[0]['weight'] + data_tara_track[0]['unit']
+              for k,v in data_weighings:
+                  if v['date'] >= t1 and v['date'] <= t2:
+                       for con in v['container_id']:
+                           if con == item_id:
+                               sessions.append(v['session_id'])
+        data['id'] = item_id
+        data['tara'] = tara
+        data['sessions'] = sessions 
+        json_data = json.dumps(return_data)
 
-    return json.dumps(json_data)
-    """
+        return json.dumps(json_data)
+        """
 
         sessionInfos = []
     except Exception as e:
@@ -396,7 +398,7 @@ def get_item(item_id):
 def getSession(id):
 
     try:
-        connection = mysql.connector.connect(**mySQL-DAL.databaseConfig)
+        connection = mysql.connector.connect(**mySQL_DAL.databaseConfig)
         cursor = connection.cursor()
         cursor.execute('SELECT * FROM weighings WHERE session_id=%s' % id)
         rv = cursor.fetchall()
