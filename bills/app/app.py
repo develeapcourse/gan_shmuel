@@ -28,14 +28,14 @@ def truckInsert():
     try:
        connection = mysql.connector.connect(**databaseConfig)
        cursor = connection.cursor()
-       cursor.execute('SELECT * FROM provider WHERE providerId = %d'%(int(request.form["providerId"])))
+       cursor.execute('SELECT * FROM provider WHERE providerId = %d'%(int(request.form["provider"])))
        myProviderId = [{providerId} for (providerId) in cursor]
        if myProviderId:
-          cursor.execute('INSERT INTO truck VALUES (%d, %d)'%((int(request.form["truckId"])),int(request.form["providerId"])))
+          cursor.execute('INSERT INTO truck VALUES (%d, %d)'%((int(request.form["id"])),int(request.form["provider"])))
           connection.commit()
           cursor.close()
           connection.close()
-          return str('A  %d truck was added successfully'%(int(request.form["truckId"])))
+          return "ok"
        else:
          logging.error("This provider does not exist in the system")
          return ("This %d provider does not exist in the system"%(int(request.form["providerId"])))
@@ -115,6 +115,16 @@ def providerUpdate(id):
         logging.error("Failed to update %s provider"%id)
         return str(e)
     
+
+
+@app.route('/tests', methods=["GET"])
+def tests():
+    try:
+        response = requests.get('http://localhost:6002/health')
+        return str(response)
+    except Exception as e:
+        return str(e)
+
 
 @app.route('/truck/<id>', methods=["GET"])
 def get_truck(id):
