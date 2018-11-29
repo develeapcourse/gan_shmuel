@@ -9,10 +9,12 @@ EXPOSE 5000
 COPY requirements.txt /tmp
 RUN pip3 install -r /tmp/requirements.txt
 
-# Run app.py when the container launches
+# Setup environment
 RUN mkdir /in /app
 COPY in/ /in
 COPY .env /app
 COPY app.py /app
 COPY mySQL_DAL.py /app
+
+# Run app.py when the container launches
 CMD python3 /app/app.py
