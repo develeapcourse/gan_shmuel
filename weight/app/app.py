@@ -26,7 +26,7 @@ import datetime
 app = Flask(__name__, static_url_path='/')
 
 # Configure logging
-logging.basicConfig(filename = 'weight_service.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+logging.basicConfig(filename = 'weight_service_app.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
 # Setting .env path and loading its values
 load_dotenv(verbose=True)
