@@ -8,9 +8,6 @@ import logging
 import mysql.connector
 import os
 
-# Logging default level is WARNING (30), So switch to level DEBUG (10)
-logging.basicConfig(filename = 'weight_service_mysql.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
-
 # Setting .env path and loading its values
 load_dotenv(verbose=True)
 
@@ -105,15 +102,6 @@ def insert_tara_truck(truck_id, truck_weight, unit):
         # cleanup
         cursor.close()
         cnx.close()
-    except Exception as e:
-        logging.error("Error: %s" % e)
-        return str(e)
-
-def get_unknown_weight_containers():
-    try:
-        # init connection to db
-        cnx = mysql.connector.connect(**databaseConfig)
-        cursor = cnx.cursor()
     except Exception as e:
         logging.error("Error: %s" % e)
         return str(e)

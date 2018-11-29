@@ -26,7 +26,7 @@ import datetime
 app = Flask(__name__, static_url_path='/')
 
 # Configure logging
-logging.basicConfig(filename = 'weight_system.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
+logging.basicConfig(filename = '/var/log/weight/weight_system.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
 # Setting .env path and loading its values
 load_dotenv(verbose=True)
@@ -355,7 +355,6 @@ def get_item(item_id):
          else:
              tara = item_data[0]['truck_weight']
              #========DAL to weighings to check the sessions id's
-=======
              query = ("SELECT * FROM weighings w WHERE w.truck_id=%s and w.datetime BETWEEN %s and %s" % (item_id, t1, t2))
     else:  
          tara = item_data[0]['container_weight']

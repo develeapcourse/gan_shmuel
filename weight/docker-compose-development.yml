@@ -10,6 +10,7 @@ services:
     volumes:
       - ./app:/app
       - ./app/in:/in
+      - /tmp:/var/log/weight
 
   service_db_weight:
     image: mysql:5.7
