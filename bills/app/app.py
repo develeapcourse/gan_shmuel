@@ -38,25 +38,28 @@ def truckInsert():
           return "ok"
        else:
          logging.error("This provider does not exist in the system")
-         return ("This %d provider does not exist in the system"%(int(request.form["providerId"])))
+         return ("This %d provider does not exist in the system"%(int(request.form["provider"])))
     except Exception as e:
-        logging.error("Failed to add %d provider"%(int(request.form["truckId"])))
+        logging.error("Failed to add %d provider"%(int(request.form["id"])))
         return str(e)
  
 @app.route('/provider', methods=["POST"])
 def providerInsert():
-       logging.info('Add new provider to the table')
+       logging.info('Adding new provider to the table')
        try:
         connection = mysql.connector.connect(**databaseConfig)
         cursor = connection.cursor()
-        cursor.execute('INSERT INTO provider VALUES (NULL, "%s")'%(request.form["providerName"]))
+        cursor.execute('INSERT INTO provider VALUES (NULL, "%s")'%(request.form["name"]))
         connection.commit()
+        providerId = cursor.lastrowid
         cursor.close()
+        response = { "id": providerId}
         connection.close()
-        logging.info('A %s provider was added successfully'%(request.form["providerName"]))
-        return json.dumps({'FlaskApp': providerList()})
+        return str(response)
+        logging.info('A %s provider was added successfully'%(request.form["name"]))
+        return json.dumps(response)
        except Exception as e:
-          logging.error("Failed to add truck %s"%(request.form["providerName"]))
+          logging.error("Failed to add provider %s"%(request.form["name"]))
           return str(e)
 
 @app.route('/truckList')
