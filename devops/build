@@ -12,7 +12,7 @@ fi
 weight_path="weight"
 bills_path="bills"
 devops_path="devops"
-docker_compose_destinations='-f '$base_dir_path'/'$bills_path'/docker-compose.yml -f '$base_dir_path'/'$weight_path'/docker-compose.yml -f '$base_dir_path'/'$devops_path'/docker-compose.override.yml'
+docker_compose_destinations='-f '$base_dir_path'/'$devops_path'/docker-compose.override.yml'
 
 image_tag="latest"
 if [ $# -ne 0 ]; then
