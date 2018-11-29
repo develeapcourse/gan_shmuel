@@ -27,20 +27,24 @@ def dump_db_table(table):
     """
     Dumps all rows from `table` name.
     """
-    # init connection to db
-    cnx = mysql.connector.connect(**databaseConfig)
-    cursor = cnx.cursor()
+    try:
+        # init connection to db
+        cnx = mysql.connector.connect(**databaseConfig)
+        cursor = cnx.cursor()
 
-    # querying db
-    query = ('SELECT * FROM {}'.format(table))
-    cursor.execute(query)
-    rv = cursor.fetchall()
+        # querying db
+        query = ('SELECT * FROM {}'.format(table))
+        cursor.execute(query)
+        rv = cursor.fetchall()
 
-    # cleanup
-    cursor.close()
-    cnx.close()
+        # cleanup
+        cursor.close()
+        cnx.close()
 
-    return str(rv)
+        return str(rv)
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
 def insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_id, produce, force):
     try:
@@ -83,7 +87,7 @@ def insert_tara_container(container_id, container_weight, unit):
         cnx.close()
         return 'fa'
     except Exception as e:
-        logging.error("Error: Error occured in DAL or DB!")
+        logging.error("Error: %s" % e)
         return str(e)
 
 def insert_tara_truck(truck_id, truck_weight, unit):
@@ -102,127 +106,159 @@ def insert_tara_truck(truck_id, truck_weight, unit):
         cursor.close()
         cnx.close()
     except Exception as e:
-        logging.error("Error: Error occured in DAL or DB!")
+        logging.error("Error: %s" % e)
         return str(e)
 
 def get_unknown_weight_containers():
-    # init connection to db
-    cnx = mysql.connector.connect(**databaseConfig)
-    cursor = cnx.cursor()
+    try:
+        # init connection to db
+        cnx = mysql.connector.connect(**databaseConfig)
+        cursor = cnx.cursor()
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
-    # querying db
-    query = ('SELECT container_id FROM tara_containers WHERE container_weight IS NULL OR container_weight = "None"')
-    cursor.execute(query)
-    rv = cursor.fetchall()
-    logging.info('send containers that have unknown weight')
+def get_unknown_weight_containers():
+    try:
+        # init connection to db
+        cnx = mysql.connector.connect(**databaseConfig)
+        cursor = cnx.cursor()
 
-    # cleanup
-    cursor.close()
-    cnx.close()
+        # querying db
+        query = ('SELECT container_id FROM tara_containers WHERE container_weight IS NULL')
+        cursor.execute(query)
+        rv = cursor.fetchall()
+        logging.info('send containers that have unknown weight')
 
-    return str(rv)
+        # cleanup
+        cursor.close()
+        cnx.close()
+        return str(rv)
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
 def get_session_by_time(fromTime, toTime):
-    # init connection to db
-    cnx = mysql.connector.connect(**databaseConfig)
-    cursor = cnx.cursor()
+    try:
+        # init connection to db
+        cnx = mysql.connector.connect(**databaseConfig)
+        cursor = cnx.cursor()
 
-    # querying db
-    query = ('SELECT * FROM weighings WHERE date_time BETWEEN %s and %s')
-    cursor.execute(query, (fromTime, toTime))
-    row_headers = [x[0] for x in cur.description]  # this will extract row headers
-    rv = cur.fetchall()
-    json_data = []
-    for result in rv:
-        json_data.append(dict(zip(row_headers,result)))
-    logging.info('send sessions list with details')
+        # querying db
+        query = ('SELECT * FROM weighings WHERE date_time BETWEEN %s and %s')
+        cursor.execute(query, (fromTime, toTime))
+        row_headers = [x[0] for x in cur.description]  # this will extract row headers
+        rv = cur.fetchall()
+        json_data = []
+        for result in rv:
+            json_data.append(dict(zip(row_headers,result)))
+        logging.info('send sessions list with details')
 
-    # cleanup
-    cursor.close()
-    cnx.close()
+        # cleanup
+        cursor.close()
+        cnx.close()
 
-    return json.dumps(json_data)
+        return json.dumps(json_data)
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
 def get_last_session_id_of_truck_entrance(truck_id):
     """
     Returns session id from weight table from most recent entry ('in') for `truck_id`.
     """
-    # init connection to db
-    cnx = mysql.connector.connect(**databaseConfig)
-    cursor = cnx.cursor()
+    try:
+        # init connection to db
+        cnx = mysql.connector.connect(**databaseConfig)
+        cursor = cnx.cursor()
 
-    # querying db
-    query = 'SELECT session_id FROM weighings WHERE truck_id = "{}" AND direction = "in"'.format(truck_id)
-    cursor.execute(query)
-    return 'foooooooooooooooooo!!!  ' + str(cursor.fetchall())
-    #session_id = cursor.fetchall()[-1]
+        # querying db
+        query = 'SELECT session_id FROM weighings WHERE truck_id = "{}" AND direction = "in"'.format(truck_id)
+        cursor.execute(query)
+        return 'foooooooooooooooooo!!!  ' + str(cursor.fetchall())
+        #session_id = cursor.fetchall()[-1]
 
-    # cleanup
-    cursor.close()
-    cnx.close()
+        # cleanup
+        cursor.close()
+        cnx.close()
 
-    #return session_id
+        #return session_id
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
 def get_tara_container(containerId):
-    # init connection to db
-    cnx = mysql.connector.connect(**databaseConfig)
-    cursor = cnx.cursor()
+    try:
+        # init connection to db
+        cnx = mysql.connector.connect(**databaseConfig)
+        cursor = cnx.cursor()
 
-    # querying db
-    query = ('SELECT * FROM tara_containers WHERE container_id=%s')
-    cursor.execute(query, (containerId))
-    row_headers = [x[0] for x in cur.description] #this will extract row headers
-    rv = cur.fetchall()
-    json_data = []
-    for result in rv:
-        json_data.append(dict(zip(row_headers,result)))
-    logging.info('send specific container')
+        # querying db
+        query = ('SELECT * FROM tara_containers WHERE container_id=%s')
+        cursor.execute(query, (containerId))
+        row_headers = [x[0] for x in cur.description] #this will extract row headers
+        rv = cur.fetchall()
+        json_data = []
+        for result in rv:
+            json_data.append(dict(zip(row_headers,result)))
+        logging.info('send specific container')
 
-    # cleanup
-    cursor.close()
-    cnx.close()
+        # cleanup
+        cursor.close()
+        cnx.close()
 
-    return json.dumps(json_data)
+        return jsonify(json_data)
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
 def get_tara_truck(truck_id):
-    # init connection to db
-    cnx = mysql.connector.connect(**databaseConfig)
-    cursor = cnx.cursor()
+    try:
+        # init connection to db
+        cnx = mysql.connector.connect(**databaseConfig)
+        cursor = cnx.cursor()
 
-    # querying db
-    query = ('SELECT * FROM weighings WHERE truck_id=%s')
-    cursor.execute(query, (truck_id))
-    row_headers = [x[0] for x in cur.description] #this will extract row headers
-    rv = cur.fetchall()
-    json_data = []
-    for result in rv:
-        json_data.append(dict(zip(row_headers,result)))
-    logging.info('send specific track')
+        # querying db
+        query = ('SELECT * FROM weighings WHERE truck_id=%s')
+        cursor.execute(query, (truck_id))
+        row_headers = [x[0] for x in cur.description] #this will extract row headers
+        rv = cur.fetchall()
+        json_data = []
+        for result in rv:
+            json_data.append(dict(zip(row_headers,result)))
+        logging.info('send specific track')
 
-    # cleanup
-    cursor.close()
-    cnx.close()
+        # cleanup
+        cursor.close()
+        cnx.close()
 
-    return json.dumps(json_data)
+        return jsonify(json_data)
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
 def get_session_weight(sessionId):
-    # init connection to db
-    cnx = mysql.connector.connect(**databaseConfig)
-    cursor = cnx.cursor()
+    try:
+        # init connection to db
+        cnx = mysql.connector.connect(**databaseConfig)
+        cursor = cnx.cursor()
 
-    # querying db
-    query = ('SELECT * FROM weighings WHERE session_id=%s')
-    cursor.execute(query, sessionId)
-    row_headers = [x[0] for x in cur.description] #this will extract row headers
-    rv = cur.fetchall()
-    json_data = []
-    for result in rv:
-        json_data.append(dict(zip(row_headers,result)))
-    logging.info('send specific session details')
+        # querying db
+        query = ('SELECT * FROM weighings WHERE session_id=%s')
+        cursor.execute(query, sessionId)
+        row_headers = [x[0] for x in cur.description] #this will extract row headers
+        rv = cur.fetchall()
+        json_data = []
+        for result in rv:
+            json_data.append(dict(zip(row_headers,result)))
+        logging.info('send specific session details')
 
-    # cleanup
-    cursor.close()
-    cnx.close()
+        # cleanup
+        cursor.close()
+        cnx.close()
 
-    return json.dumps(json_data)
+        return jsonify(json_data)
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 

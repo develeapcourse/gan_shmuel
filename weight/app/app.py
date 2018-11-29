@@ -23,22 +23,13 @@ import uuid
 import json
 import datetime
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/')
 
 # Configure logging
 logging.basicConfig(filename = 'weight_system.log', level = logging.DEBUG, format = '%(asctime)s:%(levelname)s:%(funcName)s:%(message)s')
 
 # Setting .env path and loading its values
 load_dotenv(verbose=True)
-
-# configures and initializes MySQL database.
-config = {
-    'user': os.getenv('USER', default = 'root'),
-    'password': os.getenv('PASSWORD', default = 'root'),
-    'host': os.getenv('HOST', default = 'service_db_weight'),
-    'port': os.getenv('PORT', default = '3306'),
-    'database': os.getenv('DATABASE', default = 'weight_system')
-}
 
 def get_new_unique_id(output_as = 'str'):
     """
@@ -82,7 +73,7 @@ def csv_to_json(csvFile):
         with open(csvFile) as f:
             for row in csv.DictReader(f):
                 data.append(row)
-        json_data = json.dumps(data)
+        json_data = jsonify(data)
         return json_data
     except Exception as e:
         logging.error("Error: %s" % e)
@@ -193,7 +184,7 @@ def post_batch_weight():
         return 'Read file "/in/{}" and uploaded to database.'.format(filename)
     except Exception as e:
         logging.error("Error: %s" % e)
-        #return str(e)
+        return str(e)
 
 @app.route('/unknown', methods = ['GET'])
 def get_unknown_containers():
@@ -256,7 +247,7 @@ def get_weighings_from_dt():
         cursor.execute('SELECT * , (weighings.weight - tara_containers.container_weight - tara_trucks.truck_weight) as neto  FROM weighings '
                        'LEFT JOIN tara_containers ON tara_containers.container_id = weighings.containers_id '
                        'LEFT JOIN tara_trucks ON tara_trucks.truck_id = weighings.truck_id '
-                       'WHERE  datetime BETWEEN "%d" AND "%d"AND direction IN ("%s")'%(int(t1), int(t2), (", ".join(directions))))
+                       'WHERE  datetime BETWEEN "%d" AND "%d" AND direction IN ("%s")'%(int(t1), int(t2), (", ".join(directions))))
         results = cursor.fetchall()
         cursor.close()
         connection.close()
@@ -294,9 +285,9 @@ def get_item(item_id):
       "sessions": [ <id1>,...]
     }
     """
-
-    t1 = request.args['from']
-    t2 = request.args['to']
+    try:
+        t1 = request.args['from']
+        t2 = request.args['to']
 
     """
     data_tara_container = json.load(mySQL_DAL.get_tara_container(item_id))
@@ -305,72 +296,71 @@ def get_item(item_id):
     data_weighings = json.load(mySQL_DAL.get_session_by_time(t1,t2))
     return data_tara_container
     """
-    sessions = []
-    tara = ""
+        sessions = []
+        tara = ""
 
-    #========DAL to tara_container
-    cnx = mysql.connector.connect(**mySQL-DAL.databaseConfig)
-    cursor = cnx.cursor()
-    #quering db
-    query = ("SELECT * FROM tara_containers WHERE container_id=%s" % item_id)
-    cursor.execute(query)
-    row_headers=[x[0] for x in cursor.description] #this will extract row headers
-    rv = cursor.fetchall()
-    item_data = []
-    for result in rv:
-        item_data.append(dict(zip(row_headers,result)))
-    logging.info('send specific container and data is: %s' % rv)
-    # cleanup
-    cursor.close()
-    cnx.close()
-    query=""
-    logging.info("item data is: %s and json dumps is: %s" % (item_data, json.dumps(item_data)))
-    if item_data == []:
-         #======DAL to tara_tracks - to check if item is from tracks table
-         cnx = mysql.connector.connect(**mySQL-DAL.databaseConfig)
-         cursor = cnx.cursor()
-         #quering db
-         query = ("SELECT * FROM tara_tracks WHERE track_id=%s" % item_id)
-         cursor.execute(query)
-         row_headers=[x[0] for x in cursor.description] #this will extract row headers
-         rv = cursor.fetchall()
-         logging.info("data: %s" % rv)
-         item_data = []
-         for result in rv:
-                item_data.append(dict(zip(row_headers,result)))
-         # cleanup
-         cursor.close()
-         cnx.close()
-         query=""
-         logging.info("item data is: %s and json dumps is: %s" % (item_data, json.dumps(item_data)))
-         if item_data == []:
-             logging.error("404 non-existent item, item-id: %s" % item_id)
-             return "404 not found"
-         else:
+        #========DAL to tara_container
+        cnx = mysql.connector.connect(**mySQL-DAL.databaseConfig)
+        cursor = cnx.cursor()
+        #quering db
+        query = ("SELECT * FROM tara_containers WHERE container_id=%s" % item_id)
+        cursor.execute(query)
+        row_headers=[x[0] for x in cursor.description] #this will extract row headers
+        rv = cursor.fetchall()
+        item_data = []
+        for result in rv:
+            item_data.append(dict(zip(row_headers,result)))
+        logging.info('send specific container and data is: %s' % rv)
+        # cleanup
+        cursor.close()
+        cnx.close()
+        query=""
+        logging.info("item data is: %s and json dumps is: %s" % (item_data, json.dumps(item_data)))
+        if item_data == []:
+             #======DAL to tara_tracks - to check if item is from tracks table
+             cnx = mysql.connector.connect(**mySQL-DAL.databaseConfig)
+             cursor = cnx.cursor()
+             #quering db
+             query = ("SELECT * FROM tara_tracks WHERE track_id=%s" % item_id)
+             cursor.execute(query)
+             row_headers=[x[0] for x in cursor.description] #this will extract row headers
+             rv = cursor.fetchall()
+             logging.info("data: %s" % rv)
+             item_data = []
+             for result in rv:
+                    item_data.append(dict(zip(row_headers,result)))
+             # cleanup
+             cursor.close()
+             cnx.close()
+             query=""
+             logging.info("item data is: %s and json dumps is: %s" % (item_data, json.dumps(item_data)))
+             if item_data == []:
+                 logging.error("404 non-existent item, item-id: %s" % item_id)
+                 return "404 not found"
+             else:
+                 #========DAL to weighings to check the sessions id's
+                 query = ("SELECT * FROM weighings WHERE track_id=%s" % item_id)
+        else:
              #========DAL to weighings to check the sessions id's
-             query = ("SELECT * FROM weighings WHERE track_id=%s" % item_id)
-    else:
-         #========DAL to weighings to check the sessions id's
-         query = ("SELECT * FROM weighings w WHERE FIND_IN_SET(%s, w.containers)" % item_id)
+             query = ("SELECT * FROM weighings w WHERE FIND_IN_SET(%s, w.containers)" % item_id)
 
-    if query != "":
-         #========DAL to weighings to check the sessions id's
-         cnx = mysql.connector.connect(**databaseConfig)
-         cursor = cnx.cursor()
-         #quering db
-         cursor.execute(query)
-         row_headers=[x[0] for x in cursor.description] #this will extract row headers
-         rv = cursor.fetchall()
-         session_data = []
-         for result in rv:
-              session_data.append(dict(zip(row_headers,result)))
-         logging.info('data is: %s' % rv)
-         # cleanup
-         cursor.close()
-         cnx.close()
+        if query != "":
+             #========DAL to weighings to check the sessions id's
+             cnx = mysql.connector.connect(**databaseConfig)
+             cursor = cnx.cursor()
+             #quering db
+             cursor.execute(query)
+             row_headers=[x[0] for x in cursor.description] #this will extract row headers
+             rv = cursor.fetchall()
+             session_data = []
+             for result in rv:
+                  session_data.append(dict(zip(row_headers,result)))
+             logging.info('data is: %s' % rv)
+             # cleanup
+             cursor.close()
+             cnx.close()
 
-
-         logging.info("instance found in tara container")
+             logging.info("instance found in tara container")
 
     """
     if data_tara_container == []:
@@ -397,8 +387,10 @@ def get_item(item_id):
     return json.dumps(json_data)
     """
 
-    sessionInfos = []
-
+        sessionInfos = []
+    except Exception as e:
+        logging.error("Error: %s" % e)
+        return str(e)
 
 @app.route('/session/<id>', methods = ['GET'])
 def getSession(id):
@@ -463,7 +455,7 @@ def getSession(id):
             return jsonify(payload)     
         connection.close()
     except Exception as e:
-        logging.error("Error: DB Down")
+        logging.error("Error: %s" % e)
         return str(e)
   
 @app.route('/health', methods = ['GET'])
