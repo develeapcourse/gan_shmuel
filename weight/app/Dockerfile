@@ -10,7 +10,7 @@ COPY requirements.txt /tmp
 RUN pip3 install -r /tmp/requirements.txt
 
 # Setup environment
-RUN mkdir /in /app
+RUN mkdir -p /in /app /var/log/weight
 COPY in/ /in
 COPY .env /app
 COPY app.py /app
