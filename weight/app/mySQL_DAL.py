@@ -111,21 +111,9 @@ def get_unknown_weight_containers():
         # init connection to db
         cnx = mysql.connector.connect(**databaseConfig)
         cursor = cnx.cursor()
-<<<<<<< HEAD
-=======
-    except Exception as e:
-        logging.error("(DAL) FAIL: %s" % e)
-        return str(e)
-
-def get_unknown_weight_containers():
-    try:
-        # init connection to db
-        cnx = mysql.connector.connect(**databaseConfig)
-        cursor = cnx.cursor()
->>>>>>> origin/master
 
         # querying db
-        query = ('SELECT container_id FROM tara_containers WHERE container_weight IS NULL')
+        query = ('SELECT container_id FROM tara_containers WHERE container_weight IS NULL OR container_weight = "None"')
         cursor.execute(query)
         rv = cursor.fetchall()
         logging.info('(DAL) INFO - send containers that have unknown weight')
