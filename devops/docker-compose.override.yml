@@ -2,23 +2,48 @@ version: "3"
 
 services:
     service_app_weight:
-        image: image_app_weight
+        build: ../weight/app
+        image: weight_app_service
+        depends_on:
+            - service_db_weight
         volumes:
+            - ../weight/app:/app
             - weights:/in
         ports:
             - 6002:5000
 
-    billingserviceapp:
-        image: billingserviceapp
-
+    service_db_weight:
+        image: mysql:5.7
+        environment:
+            MYSQL_ROOT_PASSWORD: root
         volumes:
+            - ../weight/db:/docker-entrypoint-initdb.d/:ro
+            - data_sql_weight:/mysql
+
+    service_app_billings:
+        build: ../bills/app
+        image: bills_app_service
+        links:
+            - service_db_billings
+        volumes:
+            - ../bills/app:/app
             - bill_rates:/in
         ports:
             - 6001:5000
 
+    service_db_billings:
+        image: mysql:5.7
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+        volumes:
+            - ../bills/db:/docker-entrypoint-initdb.d/:ro
+            - data_sql_bills:/mysql
+
 volumes:
     bill_rates:
     weights:
+    data_sql_bills:
+    data_sql_weight:
 #    ui:
 #        service: UI
 #        volumes:

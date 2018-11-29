@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import requests
 import json
-import pytest
+# import pytest
 
 url_weight = "http://localhost:6002"
 url_bills = "http://localhost:6001"
@@ -30,32 +30,31 @@ def test_health2():
 
 ################ weight tests ################
 
-# def test_post_weight():
-# 	payload = {
-# 		'direction' : 'in',
-# 		'truck' : '47298743h(@*#FJASDH098234h',
-# 		'containers' : ''
-# 	}
-# 	r = requests.post(url=url_weight+"/weight", data=payload)
-# 	assert r.status_code == 200
-
-
-
-
-
-
+def test_post_weight():
+	payload = {
+		'direction' : 'in',
+		'truck' : '47298743h(@*#FJASDH098234h',
+		'containers' : '1111, 2222', 
+		'weight' : 5500,
+		'unit' : 'kg',
+		'force' : 'true',
+		'produce' : 'orange'
+	}
+	global session_response
+	session_response = requests.post(url=url_weight+"/weight", data=payload)
+	assert session_response.status_code == 200
 
 
 ################ bills tests #################
-@pytest.fixture
-def get_prov_id():
+# @pytest.fixture
+def test_get_prov_id():
 	payload = {'providerName' : provider_name }
 	global provider_id
 	provider_id = requests.post(url=url_bills+"/provider", data=payload)
 
 
 # post tests
-def test_post_provider(get_prov_id):
+def test_post_provider():
 	assert provider_id.status_code == 200
 	assert provider_id.text.find(provider_name) is not -1
 	parsed_json = json.loads(str(provider_id.text))
@@ -82,7 +81,7 @@ def test_get_truck():
 	assert r.status_code == 200
 
 
-def test_get_bill(get_prov_id):
-	r = requests.get(url=url_bills+"/bill/"+ provider_id)
+def test_get_bill():
+	r = requests.get(url=url_bills+"/bill/"+ str(provider_id))
 	assert r.status_code == 200
 	assert r.text.find(provider_name) is not -1

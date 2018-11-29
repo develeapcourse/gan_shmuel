@@ -12,7 +12,7 @@ fi
 weight_path="weight"
 bills_path="bills"
 devops_path="devops"
-docker_compose_destinations='-f '$base_dir_path'/'$bills_path'/docker-compose.yml -f '$base_dir_path'/'$weight_path'/docker-compose.yml -f '$base_dir_path'/'$devops_path'/docker-compose.override.yml'
+docker_compose_destinations='-f '$base_dir_path'/'$devops_path'/docker-compose.override.yml'
 
 image_tag="latest"
 if [ $# -ne 0 ]; then
@@ -37,12 +37,8 @@ build_img_by_path $bills_path/app $image_tag
 
 docker-compose $docker_compose_destinations up -d
 
-python3 -m pip install --user pytest
-python3 -m pip install --user -U urllib3
+python3 -m pip install --user pytest urllib3
 
 python3 -m pytest $base_dir_path/$devops_path/test_sanity.py
-
-python3 -m pip uninstall --yes urllib3
-python3 -m pip uninstall --yes pytest
 
 docker-compose $docker_compose_destinations down
