@@ -8,6 +8,7 @@ import logging
 import datetime
 import re # Regular Expression
 from datetime import datetime
+from pathlib import Path
 
 
 app = Flask(__name__, static_url_path='/')
@@ -55,9 +56,8 @@ def providerInsert():
         cursor.close()
         response = { "id": providerId}
         connection.close()
-        return str(response)
         logging.info('A %s provider was added successfully'%(request.form["name"]))
-        return json.dumps(response)
+        return str(response)
        except Exception as e:
           logging.error("Failed to add provider %s"%(request.form["name"]))
           return str(e)

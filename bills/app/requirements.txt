@@ -2,3 +2,4 @@ Flask
 mysql-connector
 openpyxl
 requests
+pathlib
