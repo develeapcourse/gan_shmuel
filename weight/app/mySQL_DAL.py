@@ -40,7 +40,7 @@ def dump_db_table(table):
 
         return str(rv)
     except Exception as e:
-        logging.error("Error: %s" % e)
+        logging.error("(DAL) FAIL: %s" % e)
         return str(e)
 
 def insert_weight(session_id, date_time, weight, unit, direction, truck_id, container_id, produce, force):
@@ -63,7 +63,7 @@ def insert_weight(session_id, date_time, weight, unit, direction, truck_id, cont
         cnx.close()
         return True  # On success
     except Exception as e:
-        logging.error("Error: insert_weight could not process")
+        logging.error("(DAL) FAIL: insert_weight could not process")
         return str(e)
 
 def insert_tara_container(container_id, container_weight, unit):
@@ -84,7 +84,7 @@ def insert_tara_container(container_id, container_weight, unit):
         cnx.close()
         return 'fa'
     except Exception as e:
-        logging.error("Error: %s" % e)
+        logging.error("(DAL) FAIL: %s" % e)
         return str(e)
 
 def insert_tara_truck(truck_id, truck_weight, unit):
@@ -103,7 +103,7 @@ def insert_tara_truck(truck_id, truck_weight, unit):
         cursor.close()
         cnx.close()
     except Exception as e:
-        logging.error("Error: %s" % e)
+        logging.error("(DAL) FAIL: %s" % e)
         return str(e)
 
 def get_unknown_weight_containers():
@@ -111,19 +111,31 @@ def get_unknown_weight_containers():
         # init connection to db
         cnx = mysql.connector.connect(**databaseConfig)
         cursor = cnx.cursor()
+<<<<<<< HEAD
+=======
+    except Exception as e:
+        logging.error("(DAL) FAIL: %s" % e)
+        return str(e)
+
+def get_unknown_weight_containers():
+    try:
+        # init connection to db
+        cnx = mysql.connector.connect(**databaseConfig)
+        cursor = cnx.cursor()
+>>>>>>> origin/master
 
         # querying db
         query = ('SELECT container_id FROM tara_containers WHERE container_weight IS NULL')
         cursor.execute(query)
         rv = cursor.fetchall()
-        logging.info('send containers that have unknown weight')
+        logging.info('(DAL) INFO - send containers that have unknown weight')
 
         # cleanup
         cursor.close()
         cnx.close()
         return str(rv)
     except Exception as e:
-        logging.error("Error: %s" % e)
+        logging.error("(DAL) FAIL: %s" % e)
         return str(e)
 
 def get_session_by_time(fromTime, toTime):
@@ -140,7 +152,7 @@ def get_session_by_time(fromTime, toTime):
         json_data = []
         for result in rv:
             json_data.append(dict(zip(row_headers,result)))
-        logging.info('send sessions list with details')
+        logging.info('(DAL) INFO send sessions list with details')
 
         # cleanup
         cursor.close()
@@ -148,7 +160,7 @@ def get_session_by_time(fromTime, toTime):
 
         return json.dumps(json_data)
     except Exception as e:
-        logging.error("Error: %s" % e)
+        logging.error("(DAL) FAIL: %s" % e)
         return str(e)
 
 def get_last_session_id_of_truck_entrance(truck_id):
@@ -172,7 +184,7 @@ def get_last_session_id_of_truck_entrance(truck_id):
 
         #return session_id
     except Exception as e:
-        logging.error("Error: %s" % e)
+        logging.error("(DAL) FAIL: %s" % e)
         return str(e)
 
 def get_tara_container(containerId):
@@ -189,7 +201,7 @@ def get_tara_container(containerId):
         json_data = []
         for result in rv:
             json_data.append(dict(zip(row_headers,result)))
-        logging.info('send specific container')
+        logging.info('(DAL) INFO send specific container')
 
         # cleanup
         cursor.close()
@@ -197,7 +209,7 @@ def get_tara_container(containerId):
 
         return jsonify(json_data)
     except Exception as e:
-        logging.error("Error: %s" % e)
+        logging.error("(DAL) FAIL: %s" % e)
         return str(e)
 
 def get_tara_truck(truck_id):
@@ -214,7 +226,7 @@ def get_tara_truck(truck_id):
         json_data = []
         for result in rv:
             json_data.append(dict(zip(row_headers,result)))
-        logging.info('send specific track')
+        logging.info('(DAL) INFO send specific track')
 
         # cleanup
         cursor.close()
@@ -222,7 +234,7 @@ def get_tara_truck(truck_id):
 
         return jsonify(json_data)
     except Exception as e:
-        logging.error("Error: %s" % e)
+        logging.error("(DAL) FAIL: %s" % e)
         return str(e)
 
 def get_session_weight(sessionId):
@@ -239,7 +251,7 @@ def get_session_weight(sessionId):
         json_data = []
         for result in rv:
             json_data.append(dict(zip(row_headers,result)))
-        logging.info('send specific session details')
+        logging.info('(DAL) INFO send specific session details')
 
         # cleanup
         cursor.close()
@@ -247,6 +259,6 @@ def get_session_weight(sessionId):
 
         return jsonify(json_data)
     except Exception as e:
-        logging.error("Error: %s" % e)
+        logging.error("(DAL) FAIL: %s" % e)
         return str(e)
 

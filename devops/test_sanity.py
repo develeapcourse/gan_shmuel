@@ -9,12 +9,24 @@ provider_name = '@#ASD!DNF20947ASDM_test'
 truck_plate = "47298743h(@*#FJASDH098234h"
 provider_id=""
 
-try:
-	r_weight = requests.get(url_weight)
+
+
+def test_get_health():
+	global url_bills
+	global url_weight
+	global r_weight
+	global r_bills
+	assert requests.get(url_weight)
+	assert requests.get(url_bills)
 	r_bills = requests.get(url_bills)
-except Exception as e:
-	print("Error:\n" + str(e))
-	exit(1)
+	r_weight = requests.get(url_weight)
+	
+# basic health tests
+def test_health1():
+	assert r_weight.status_code == 200
+
+def test_health2():
+	assert r_bills.status_code == 200
 
 ################ weight tests ################
 
@@ -41,13 +53,6 @@ def get_prov_id():
 	global provider_id
 	provider_id = requests.post(url=url_bills+"/provider", data=payload)
 
-
-# basic health tests
-def test_health1():
-	assert r_weight.status_code == 200
-
-def test_health2():
-	assert r_bills.status_code == 200
 
 # post tests
 def test_post_provider(get_prov_id):
